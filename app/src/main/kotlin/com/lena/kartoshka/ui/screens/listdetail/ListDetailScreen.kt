@@ -107,6 +107,9 @@ import kotlinx.coroutines.launch
 private val ItemCardColor = Color(0xFFE07870)
 private val RecentlyUsedCardColor = Color(0xFF4A8579)
 
+private fun detectCategoryId(name: String): String? =
+    itemCategories.firstOrNull { cat -> cat.items.any { it.equals(name, ignoreCase = true) } }?.id
+
 private fun ItemTag.toIcon() = when (this) {
     ItemTag.URGENT      -> Icons.Filled.PriorityHigh
     ItemTag.ON_SALE     -> Icons.Filled.LocalOffer
@@ -136,6 +139,7 @@ fun ListDetailScreen(
     var showListMenu by remember { mutableStateOf(false) }
     val listMenuSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showListSettings by remember { mutableStateOf(false) }
+    var showCategoryPicker by remember { mutableStateOf(false) }
 
     val categoryOrderIds by sortRepository.observeCategoryOrder().collectAsState(initial = emptyList())
     val hiddenCategoryIds by sortRepository.observeHiddenCategories().collectAsState(initial = emptySet())
@@ -347,6 +351,7 @@ fun ListDetailScreen(
         ) {
             ItemDetailSheet(
                 item = selectedItem!!,
+                onChangeCategoryClick = { showCategoryPicker = true },
                 onTagToggle = { tag ->
                     val current = selectedItem
                     if (current != null) {
@@ -373,6 +378,26 @@ fun ListDetailScreen(
                 }
             )
         }
+    }
+
+    if (showCategoryPicker && selectedItem != null) {
+        CategoryPickerSheet(
+            itemName = selectedItem!!.name,
+            currentCategoryId = selectedItem!!.categoryId ?: detectCategoryId(selectedItem!!.name),
+            onCategorySelected = { categoryId ->
+                val current = selectedItem
+                if (current != null) {
+                    val updated = current.copy(categoryId = categoryId)
+                    val aIdx = activeItems.indexOfFirst { it.id == current.id }
+                    if (aIdx >= 0) activeItems[aIdx] = updated
+                    val rIdx = recentlyUsed.indexOfFirst { it.id == current.id }
+                    if (rIdx >= 0) recentlyUsed[rIdx] = updated
+                    selectedItem = updated
+                }
+                showCategoryPicker = false
+            },
+            onDismiss = { showCategoryPicker = false }
+        )
     }
 
     if (justAddedItem != null) {
@@ -503,7 +528,7 @@ private fun ItemCard(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onDone: (note: String) -> Unit) {
+private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onChangeCategoryClick: () -> Unit = {}, onDone: (note: String) -> Unit) {
     var note by remember(item.id) { mutableStateOf(item.note) }
     val noteHint = stringResource(R.string.item_note_hint)
 
@@ -652,7 +677,8 @@ private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onD
                 SettingsButton(
                     icon = Icons.Filled.Category,
                     label = stringResource(R.string.change_category),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = onChangeCategoryClick
                 )
                 SettingsButton(
                     icon = Icons.Filled.SwapHoriz,
@@ -682,11 +708,11 @@ private fun QuickChip(label: String, onClick: () -> Unit = {}) {
 }
 
 @Composable
-private fun SettingsButton(icon: ImageVector, label: String, modifier: Modifier = Modifier) {
+private fun SettingsButton(icon: ImageVector, label: String, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(14.dp),
-        modifier = modifier.height(90.dp)
+        modifier = modifier.height(90.dp).clickable(onClick = onClick)
     ) {
         Column(
             modifier = Modifier
@@ -1328,5 +1354,108 @@ private fun ListMenuItem(icon: ImageVector, label: String, onClick: () -> Unit =
             fontSize = 16.sp,
             color = MaterialTheme.colorScheme.onSurface
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CategoryPickerSheet(
+    itemName: String,
+    currentCategoryId: String?,
+    onCategorySelected: (String?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.Filled.Clear,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Text(
+                    text = itemName,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Text(
+                text = stringResource(R.string.category_picker_description),
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = 32.dp)
+            ) {
+                itemCategories.forEach { category ->
+                    val isSelected = category.id == currentCategoryId
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onCategorySelected(category.id) }
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = category.name,
+                            fontSize = 16.sp,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurface
+                        )
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Filled.Checklist,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
+                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onCategorySelected(null) }
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.category_own_items),
+                        fontSize = 16.sp,
+                        color = if (currentCategoryId == null) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                    )
+                    if (currentCategoryId == null) {
+                        Icon(
+                            imageVector = Icons.Filled.Checklist,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
