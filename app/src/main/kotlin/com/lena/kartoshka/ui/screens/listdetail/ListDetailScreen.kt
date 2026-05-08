@@ -84,6 +84,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lena.kartoshka.R
@@ -317,7 +318,30 @@ fun ListDetailScreen(
         ) {
             ItemDetailSheet(
                 item = selectedItem!!,
-                onDone = { selectedItem = null }
+                onTagToggle = { tag ->
+                    val current = selectedItem
+                    if (current != null) {
+                        val newTags = if (tag in current.tags) current.tags - tag
+                                      else current.tags + tag
+                        val updated = current.copy(tags = newTags)
+                        val aIdx = activeItems.indexOfFirst { it.id == current.id }
+                        if (aIdx >= 0) activeItems[aIdx] = updated
+                        val rIdx = recentlyUsed.indexOfFirst { it.id == current.id }
+                        if (rIdx >= 0) recentlyUsed[rIdx] = updated
+                        selectedItem = updated
+                    }
+                },
+                onDone = { note ->
+                    val current = selectedItem
+                    if (current != null) {
+                        val updated = current.copy(note = note)
+                        val aIdx = activeItems.indexOfFirst { it.id == current.id }
+                        if (aIdx >= 0) activeItems[aIdx] = updated
+                        val rIdx = recentlyUsed.indexOfFirst { it.id == current.id }
+                        if (rIdx >= 0) recentlyUsed[rIdx] = updated
+                    }
+                    selectedItem = null
+                }
             )
         }
     }
@@ -393,7 +417,7 @@ private fun ItemCard(
         )
         if (item.tags.isNotEmpty()) {
             Row(
-                modifier = Modifier.align(Alignment.TopStart),
+                modifier = Modifier.align(Alignment.TopCenter),
                 horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 item.tags.sortedBy { it.ordinal }.forEach { tag ->
@@ -406,22 +430,39 @@ private fun ItemCard(
                 }
             }
         }
-        Text(
-            text = item.name,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color.White,
-            lineHeight = 16.sp,
-            maxLines = 2,
-            modifier = Modifier.align(Alignment.BottomStart)
-        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = item.name,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+                lineHeight = 16.sp,
+                maxLines = 2,
+                textAlign = TextAlign.Center
+            )
+            if (item.note.isNotEmpty()) {
+                Text(
+                    text = item.note,
+                    fontSize = 10.sp,
+                    color = Color.White.copy(alpha = 0.75f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
     }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ItemDetailSheet(item: Item, onDone: () -> Unit) {
-    var note by remember { mutableStateOf("") }
+private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onDone: (note: String) -> Unit) {
+    var note by remember(item.id) { mutableStateOf(item.note) }
     val noteHint = stringResource(R.string.item_note_hint)
 
     Column(
@@ -443,7 +484,7 @@ private fun ItemDetailSheet(item: Item, onDone: () -> Unit) {
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
-            TextButton(onClick = onDone) {
+            TextButton(onClick = { onDone(note) }) {
                 Text(
                     text = stringResource(R.string.done),
                     color = MaterialTheme.colorScheme.onSurface,
@@ -493,11 +534,50 @@ private fun ItemDetailSheet(item: Item, onDone: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             listOf("1", "2", "3", "4", "5", "8", "10", "1 кг").forEach { label ->
-                QuickChip(label = label)
+                QuickChip(label = label, onClick = { note = label })
             }
-            QuickChip(label = stringResource(R.string.tag_urgent))
-            QuickChip(label = stringResource(R.string.tag_sale))
-            QuickChip(label = stringResource(R.string.tag_if_convenient))
+        }
+
+        // Tag chips with icons (separate from quantity chips)
+        val tagInfos = listOf(
+            Triple(ItemTag.URGENT,         Icons.Filled.PriorityHigh, stringResource(R.string.tag_urgent)),
+            Triple(ItemTag.ON_SALE,        Icons.Filled.LocalOffer,   stringResource(R.string.tag_sale)),
+            Triple(ItemTag.IF_CONVENIENT,  Icons.Filled.AccessTime,   stringResource(R.string.tag_if_convenient))
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            tagInfos.forEach { (tag, icon, label) ->
+                val isSelected = tag in item.tags
+                Surface(
+                    color = if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.clickable { onTagToggle(tag) }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                   else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = label,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                    else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(4.dp))
@@ -543,10 +623,11 @@ private fun ItemDetailSheet(item: Item, onDone: () -> Unit) {
 }
 
 @Composable
-private fun QuickChip(label: String) {
+private fun QuickChip(label: String, onClick: () -> Unit = {}) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(10.dp)
+        shape = RoundedCornerShape(10.dp),
+        modifier = Modifier.clickable(onClick = onClick)
     ) {
         Text(
             text = label,
