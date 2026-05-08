@@ -17,6 +17,8 @@
     <string name="category_picker_description">Kartoshka uses the category to sort your shopping list. Assign one to your item.</string>
     <string name="category_own_items">Custom items</string>
     <string name="move_item">Move item</string>
+    <string name="move_item_title">Transfer item</string>
+    <string name="move_item_description">You can transfer this item to another list. It will be removed from the current list.</string>
     <string name="recently_used">Recently Used</string>
     <string name="your_cards">Your cards</string>
     <string name="add_card">+ Add card</string>

@@ -47,6 +47,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -100,6 +101,7 @@ import com.lena.kartoshka.data.Item
 import com.lena.kartoshka.data.ItemCategory
 import com.lena.kartoshka.data.LoyaltyCard
 import com.lena.kartoshka.data.ShoppingList
+import com.lena.kartoshka.data.sampleLists
 import com.lena.kartoshka.data.ItemTag
 import com.lena.kartoshka.data.itemCategories
 import com.lena.kartoshka.data.sampleLoyaltyCards
@@ -143,6 +145,7 @@ fun ListDetailScreen(
     val listMenuSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showListSettings by remember { mutableStateOf(false) }
     var showCategoryPicker by remember { mutableStateOf(false) }
+    var showMoveItemPicker by remember { mutableStateOf(false) }
 
     val categoryOrderIds by sortRepository.observeCategoryOrder().collectAsState(initial = emptyList())
     val hiddenCategoryIds by sortRepository.observeHiddenCategories().collectAsState(initial = emptySet())
@@ -355,6 +358,7 @@ fun ListDetailScreen(
             ItemDetailSheet(
                 item = selectedItem!!,
                 onChangeCategoryClick = { showCategoryPicker = true },
+                onMoveItemClick = { showMoveItemPicker = true },
                 onDeleteItem = {
                     val current = selectedItem
                     if (current != null) {
@@ -408,6 +412,23 @@ fun ListDetailScreen(
                 showCategoryPicker = false
             },
             onDismiss = { showCategoryPicker = false }
+        )
+    }
+
+    if (showMoveItemPicker && selectedItem != null) {
+        MoveItemSheet(
+            currentListId = list.id,
+            allLists = sampleLists,
+            onListSelected = { targetList ->
+                val current = selectedItem
+                if (current != null && targetList.id != list.id) {
+                    activeItems.removeIf { it.id == current.id }
+                    recentlyUsed.removeIf { it.id == current.id }
+                }
+                showMoveItemPicker = false
+                selectedItem = null
+            },
+            onDismiss = { showMoveItemPicker = false }
         )
     }
 
@@ -539,7 +560,7 @@ private fun ItemCard(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onChangeCategoryClick: () -> Unit = {}, onDeleteItem: () -> Unit = {}, onDone: (note: String) -> Unit) {
+private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onChangeCategoryClick: () -> Unit = {}, onMoveItemClick: () -> Unit = {}, onDeleteItem: () -> Unit = {}, onDone: (note: String) -> Unit) {
     var note by remember(item.id) { mutableStateOf(item.note) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     val noteHint = stringResource(R.string.item_note_hint)
@@ -696,7 +717,8 @@ private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onC
                 SettingsButton(
                     icon = Icons.Filled.SwapHoriz,
                     label = stringResource(R.string.move_item),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = onMoveItemClick
                 )
             }
         }
@@ -1530,6 +1552,86 @@ private fun CategoryPickerSheet(
                             modifier = Modifier.size(20.dp)
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MoveItemSheet(
+    currentListId: String,
+    allLists: List<ShoppingList>,
+    onListSelected: (ShoppingList) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        imageVector = Icons.Filled.Clear,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.move_item_title),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Text(
+                text = stringResource(R.string.move_item_description),
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(bottom = 32.dp)
+            ) {
+                allLists.forEach { shoppingList ->
+                    val isCurrent = shoppingList.id == currentListId
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onListSelected(shoppingList) }
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = shoppingList.name,
+                            fontSize = 16.sp,
+                            color = if (isCurrent) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurface
+                        )
+                        if (isCurrent) {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
                 }
             }
         }
