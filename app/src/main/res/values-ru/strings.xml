@@ -21,6 +21,10 @@
     <string name="tag_urgent">Срочные</string>
     <string name="tag_sale">Акция</string>
     <string name="tag_if_convenient">Если удобно</string>
+    <string name="nav_lists">Списки</string>
+    <string name="nav_ideas">Идеи</string>
+    <string name="nav_offers">Предложения</string>
+    <string name="nav_profile">Профиль</string>
     <string name="sort_list_button">Сортировка списка</string>
     <string name="sort_screen_title">Сортировка</string>
     <string name="sort_save">Сохранить</string>

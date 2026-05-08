@@ -21,6 +21,10 @@
     <string name="tag_urgent">Urgent</string>
     <string name="tag_sale">On sale</string>
     <string name="tag_if_convenient">If convenient</string>
+    <string name="nav_lists">Lists</string>
+    <string name="nav_ideas">Ideas</string>
+    <string name="nav_offers">Offers</string>
+    <string name="nav_profile">Profile</string>
     <string name="sort_list_button">Sort list</string>
     <string name="sort_screen_title">Sorting</string>
     <string name="sort_save">Save</string>
