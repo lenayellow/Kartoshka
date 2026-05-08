@@ -25,11 +25,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.LocalOffer
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Style
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -43,7 +38,6 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -60,6 +54,7 @@ import com.lena.kartoshka.ui.theme.KartoshkaTheme
 
 @Composable
 fun MyListsScreen(modifier: Modifier = Modifier, onListClick: (String) -> Unit = {}) {
+    val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -71,10 +66,9 @@ fun MyListsScreen(modifier: Modifier = Modifier, onListClick: (String) -> Unit =
                 start = 16.dp,
                 end = 16.dp,
                 top = 8.dp,
-                bottom = 8.dp
+                bottom = 8.dp + navBarBottom
             ),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.weight(1f)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(sampleLists, key = { it.id }) { list ->
                 MyListCard(list = list, onClick = { onListClick(list.id) })
@@ -86,7 +80,6 @@ fun MyListsScreen(modifier: Modifier = Modifier, onListClick: (String) -> Unit =
                 SuggestionsSection(suggestions = sampleSuggestions)
             }
         }
-        BottomNavBar()
     }
 }
 
@@ -112,76 +105,6 @@ private fun Header() {
                 fontWeight = FontWeight.Medium
             )
         }
-    }
-}
-
-@Composable
-private fun BottomNavBar() {
-    val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-
-    Column {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(bottom = navBarPadding)
-                .padding(vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            NavItem(
-                icon = Icons.Filled.Checklist,
-                label = stringResource(R.string.nav_lists),
-                selected = true
-            )
-            NavItem(
-                icon = Icons.Filled.Style,
-                label = stringResource(R.string.nav_ideas),
-                selected = false
-            )
-            NavItem(
-                icon = Icons.Filled.LocalOffer,
-                label = stringResource(R.string.nav_offers),
-                selected = false
-            )
-            NavItem(
-                icon = Icons.Filled.Person,
-                label = stringResource(R.string.nav_profile),
-                selected = false
-            )
-        }
-    }
-}
-
-@Composable
-private fun NavItem(
-    icon: ImageVector,
-    label: String,
-    selected: Boolean
-) {
-    val tint = if (selected) MaterialTheme.colorScheme.onSurface
-               else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
-
-    Column(
-        modifier = Modifier
-            .clickable(enabled = !selected, onClick = {})
-            .padding(horizontal = 16.dp, vertical = 2.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = label,
-            tint = tint,
-            modifier = Modifier.size(24.dp)
-        )
-        Text(
-            text = label,
-            fontSize = 11.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            color = tint,
-            textAlign = TextAlign.Center
-        )
     }
 }
 

@@ -44,8 +44,13 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.LocalOffer
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Style
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -96,7 +101,6 @@ fun ListDetailScreen(
     onBack: () -> Unit
 ) {
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val scope = rememberCoroutineScope()
 
     val activeItems = remember { mutableStateListOf(*items.toTypedArray()) }
@@ -253,7 +257,8 @@ fun ListDetailScreen(
                 }
             }
 
-            AddItemRow(modifier = Modifier.padding(bottom = navBarPadding))
+            AddItemRow()
+            BottomNavBar()
         }
 
         if (showSortScreen) {
@@ -776,5 +781,48 @@ private fun AddItemRow(modifier: Modifier = Modifier) {
                 modifier = Modifier.size(28.dp)
             )
         }
+    }
+}
+
+@Composable
+private fun BottomNavBar() {
+    val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    Column {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(bottom = navBarPadding)
+                .padding(vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            NavItem(icon = Icons.Filled.Checklist,  label = stringResource(R.string.nav_lists),   selected = true)
+            NavItem(icon = Icons.Filled.Style,       label = stringResource(R.string.nav_ideas),   selected = false)
+            NavItem(icon = Icons.Filled.LocalOffer,  label = stringResource(R.string.nav_offers),  selected = false)
+            NavItem(icon = Icons.Filled.Person,      label = stringResource(R.string.nav_profile), selected = false)
+        }
+    }
+}
+
+@Composable
+private fun NavItem(icon: ImageVector, label: String, selected: Boolean) {
+    val tint = if (selected) MaterialTheme.colorScheme.onSurface
+               else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+    Column(
+        modifier = Modifier
+            .clickable(enabled = !selected, onClick = {})
+            .padding(horizontal = 16.dp, vertical = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Icon(imageVector = icon, contentDescription = label, tint = tint, modifier = Modifier.size(24.dp))
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            color = tint,
+            textAlign = TextAlign.Center
+        )
     }
 }
