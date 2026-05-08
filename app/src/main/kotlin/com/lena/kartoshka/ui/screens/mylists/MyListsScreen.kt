@@ -53,7 +53,11 @@ import com.lena.kartoshka.data.sampleSuggestions
 import com.lena.kartoshka.ui.theme.KartoshkaTheme
 
 @Composable
-fun MyListsScreen(modifier: Modifier = Modifier, onListClick: (String) -> Unit = {}) {
+fun MyListsScreen(
+    modifier: Modifier = Modifier,
+    onListClick: (String) -> Unit = {},
+    onNewListClick: () -> Unit = {}
+) {
     val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     Column(
         modifier = modifier
@@ -74,7 +78,7 @@ fun MyListsScreen(modifier: Modifier = Modifier, onListClick: (String) -> Unit =
                 MyListCard(list = list, onClick = { onListClick(list.id) })
             }
             item {
-                NewListCard(onClick = { /* TODO: open New List screen */ })
+                NewListCard(onClick = onNewListClick)
             }
             item {
                 SuggestionsSection(suggestions = sampleSuggestions)

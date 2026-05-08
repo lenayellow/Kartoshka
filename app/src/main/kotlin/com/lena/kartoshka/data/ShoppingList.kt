@@ -1,5 +1,6 @@
 package com.lena.kartoshka.data
 
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.Color
 
 data class ShoppingList(
@@ -9,7 +10,7 @@ data class ShoppingList(
     val color: Color
 )
 
-val sampleLists: List<ShoppingList> = listOf(
+val sampleLists = mutableStateListOf(
     ShoppingList("1", "Home", 1, Color(0xFF5B7178)),
     ShoppingList("2", "St.P", 6, Color(0xFFDDA68B)),
     ShoppingList("3", "Holiday Home", 7, Color(0xFF4F8579)),

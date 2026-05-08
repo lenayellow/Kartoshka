@@ -15,6 +15,8 @@ import com.lena.kartoshka.data.sampleLists
 import com.lena.kartoshka.data.sort.LocalSortRepository
 import com.lena.kartoshka.ui.screens.listdetail.ListDetailScreen
 import com.lena.kartoshka.ui.screens.mylists.MyListsScreen
+import com.lena.kartoshka.ui.screens.newlist.NewListScreen
+import com.lena.kartoshka.ui.screens.share.ShareScreen
 import com.lena.kartoshka.ui.theme.KartoshkaTheme
 
 class MainActivity : ComponentActivity() {
@@ -31,7 +33,26 @@ class MainActivity : ComponentActivity() {
                     NavHost(navController = navController, startDestination = "lists") {
                         composable("lists") {
                             MyListsScreen(
-                                onListClick = { listId -> navController.navigate("list/$listId") }
+                                onListClick = { listId -> navController.navigate("list/$listId") },
+                                onNewListClick = { navController.navigate("new_list") }
+                            )
+                        }
+                        composable("new_list") {
+                            NewListScreen(
+                                onListCreated = { listId ->
+                                    navController.navigate("share_list/$listId")
+                                }
+                            )
+                        }
+                        composable("share_list/{listId}") { backStackEntry ->
+                            val listId = backStackEntry.arguments?.getString("listId") ?: return@composable
+                            ShareScreen(
+                                listId = listId,
+                                onSkip = {
+                                    navController.navigate("list/$listId") {
+                                        popUpTo("lists")
+                                    }
+                                }
                             )
                         }
                         composable("list/{listId}") { backStackEntry ->
