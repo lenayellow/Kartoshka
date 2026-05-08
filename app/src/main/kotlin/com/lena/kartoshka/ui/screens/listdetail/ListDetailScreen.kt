@@ -233,7 +233,13 @@ fun ListDetailScreen(
                 }
                 if (recentlyUsed.isNotEmpty()) {
                     item(span = { GridItemSpan(3) }) {
-                        RecentlyUsedSection(items = recentlyUsed)
+                        RecentlyUsedSection(
+                            items = recentlyUsed,
+                            onItemClick = { item ->
+                                recentlyUsed.remove(item)
+                                activeItems.add(0, item)
+                            }
+                        )
                     }
                 }
                 item(span = { GridItemSpan(3) }) {
@@ -602,7 +608,7 @@ private fun CategoryItemCard(name: String, onAdd: () -> Unit) {
 }
 
 @Composable
-private fun RecentlyUsedSection(items: List<Item>) {
+private fun RecentlyUsedSection(items: List<Item>, onItemClick: (Item) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -633,7 +639,8 @@ private fun RecentlyUsedSection(items: List<Item>) {
                     ItemCard(
                         item = item,
                         cardColor = RecentlyUsedCardColor,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        onClick = { onItemClick(item) }
                     )
                 }
                 repeat(3 - row.size) {
