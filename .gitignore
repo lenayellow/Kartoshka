@@ -1,0 +1,63 @@
+# Built application files
+*.apk
+*.aar
+*.ap_
+*.aab
+
+# Files for the ART/Dalvik VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+release/
+
+# Gradle build files and caches
+.gradle/
+build/
+**/build/
+
+# Local configuration (contains your machine-specific SDK path — never commit)
+local.properties
+
+# Proguard
+proguard/
+
+# Log files
+*.log
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+captures/
+.navigation/
+
+# Keystore files (NEVER commit these)
+*.jks
+*.keystore
+
+# External native build folder
+.externalNativeBuild/
+.cxx/
+
+# Google Services
+google-services.json
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Claude Code local settings (keep CLAUDE.md, ignore local-only state)
+.claude/
+
+# Screenshots folder for prompts (optional — remove this line if you want to commit them)
+# screenshots/

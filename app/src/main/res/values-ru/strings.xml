@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Картошка</string>
+    <string name="my_lists_title">Мои списки</string>
+    <string name="edit">Редактировать</string>
+    <string name="new_list">+ Новый список</string>
+    <string name="suggestions_title">Рекомендации для добавления в список</string>
+    <string name="back_to_lists">Списки</string>
+    <string name="add_item_hint">Мне нужно…</string>
+    <string name="done">Готово</string>
+    <string name="item_note_hint">Количество, описание…</string>
+    <string name="item_details_about">Подробнее о товаре %s</string>
+    <string name="settings">Настройки</string>
+    <string name="change_icon">Изменить иконку</string>
+    <string name="add_photo">Добавить фото</string>
+    <string name="change_category">Изменить категорию</string>
+    <string name="move_item">Перенести товар</string>
+    <string name="recently_used">Недавно использованные</string>
+    <string name="your_cards">Ваши карты</string>
+    <string name="add_card">+ Добавить карту</string>
+    <string name="tag_urgent">Срочные</string>
+    <string name="tag_sale">Акция</string>
+    <string name="tag_if_convenient">Если удобно</string>
+    <plurals name="items">
+        <item quantity="one">%d товар</item>
+        <item quantity="few">%d товара</item>
+        <item quantity="many">%d товаров</item>
+        <item quantity="other">%d товара</item>
+    </plurals>
+</resources>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base theme required by the manifest. Compose takes over after launch. -->
+    <style name="Theme.Kartoshka" parent="android:Theme.DeviceDefault.NoActionBar" />
+</resources>
