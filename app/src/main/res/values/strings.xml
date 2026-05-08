@@ -25,6 +25,13 @@
     <string name="nav_ideas">Ideas</string>
     <string name="nav_offers">Offers</string>
     <string name="nav_profile">Profile</string>
+    <string name="list_menu_title">List parameters</string>
+    <string name="list_menu_suggestions">Purchase suggestions</string>
+    <string name="list_menu_send">Send list</string>
+    <string name="list_menu_print">Print list</string>
+    <string name="list_menu_recommend">Recommend to a friend</string>
+    <string name="list_menu_settings">List settings</string>
+    <string name="list_menu_cards">Cards</string>
     <string name="cancel">Cancel</string>
     <string name="next_item_hint">Next item…</string>
     <string name="notes">Notes</string>

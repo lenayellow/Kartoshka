@@ -25,6 +25,13 @@
     <string name="nav_ideas">Идеи</string>
     <string name="nav_offers">Предложения</string>
     <string name="nav_profile">Профиль</string>
+    <string name="list_menu_title">Параметры списка</string>
+    <string name="list_menu_suggestions">Предложения покупок</string>
+    <string name="list_menu_send">Отправить список</string>
+    <string name="list_menu_print">Печать списка</string>
+    <string name="list_menu_recommend">Рекомендовать другу</string>
+    <string name="list_menu_settings">Настройки списка</string>
+    <string name="list_menu_cards">Карты</string>
     <string name="cancel">Отменить</string>
     <string name="next_item_hint">Следующий товар…</string>
     <string name="notes">Заметки</string>

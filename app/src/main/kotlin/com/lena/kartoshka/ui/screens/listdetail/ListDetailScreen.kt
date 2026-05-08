@@ -49,8 +49,14 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Print
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Person
@@ -127,6 +133,8 @@ fun ListDetailScreen(
     var showSortScreen by remember { mutableStateOf(false) }
     var justAddedItem by remember { mutableStateOf<Item?>(null) }
     val addInfoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showListMenu by remember { mutableStateOf(false) }
+    val listMenuSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val categoryOrderIds by sortRepository.observeCategoryOrder().collectAsState(initial = emptyList())
     val hiddenCategoryIds by sortRepository.observeHiddenCategories().collectAsState(initial = emptySet())
@@ -191,7 +199,18 @@ fun ListDetailScreen(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1f)
                 )
-                Spacer(modifier = Modifier.weight(1f))
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    IconButton(onClick = { showListMenu = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
             }
 
             // Sort button
@@ -387,6 +406,16 @@ fun ListDetailScreen(
                 },
                 onCancel = { justAddedItem = null }
             )
+        }
+    }
+
+    if (showListMenu) {
+        ModalBottomSheet(
+            onDismissRequest = { showListMenu = false },
+            sheetState = listMenuSheetState,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ) {
+            ListMenuSheet()
         }
     }
 }
@@ -1225,5 +1254,66 @@ private fun AddItemInfoSheet(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ListMenuSheet() {
+    val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp + navBarPadding)
+    ) {
+        Text(
+            text = stringResource(R.string.list_menu_title),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
+        )
+
+        ListMenuItem(icon = Icons.Filled.AutoAwesome, label = stringResource(R.string.list_menu_suggestions))
+        ListMenuItem(icon = Icons.Filled.Share,       label = stringResource(R.string.list_menu_send))
+        ListMenuItem(icon = Icons.Filled.Print,       label = stringResource(R.string.list_menu_print))
+
+        HorizontalDivider(
+            modifier = Modifier.padding(vertical = 8.dp),
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+        )
+
+        ListMenuItem(icon = Icons.Filled.Favorite, label = stringResource(R.string.list_menu_recommend))
+        ListMenuItem(icon = Icons.Filled.Settings, label = stringResource(R.string.list_menu_settings))
+
+        HorizontalDivider(
+            modifier = Modifier.padding(vertical = 8.dp),
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+        )
+
+        ListMenuItem(icon = Icons.Filled.CreditCard, label = stringResource(R.string.list_menu_cards))
+    }
+}
+
+@Composable
+private fun ListMenuItem(icon: ImageVector, label: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(22.dp)
+        )
+        Text(
+            text = label,
+            fontSize = 16.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
