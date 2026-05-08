@@ -17,6 +17,10 @@
     <string name="category_picker_description">Kartoshka uses the category to sort your shopping list. Assign one to your item.</string>
     <string name="category_own_items">Custom items</string>
     <string name="move_item">Move item</string>
+    <string name="add_photo_title">Choose photo</string>
+    <string name="add_photo_description">You can take a new photo or choose one from your album.</string>
+    <string name="add_photo_from_album">CHOOSE FROM ALBUM</string>
+    <string name="add_photo_take">TAKE PHOTO</string>
     <string name="move_item_title">Transfer item</string>
     <string name="move_item_description">You can transfer this item to another list. It will be removed from the current list.</string>
     <string name="recently_used">Recently Used</string>

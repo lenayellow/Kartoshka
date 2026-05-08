@@ -47,6 +47,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.ui.window.Dialog
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.AccessTime
@@ -146,6 +147,7 @@ fun ListDetailScreen(
     var showListSettings by remember { mutableStateOf(false) }
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showMoveItemPicker by remember { mutableStateOf(false) }
+    var showPhotoDialog by remember { mutableStateOf(false) }
 
     val categoryOrderIds by sortRepository.observeCategoryOrder().collectAsState(initial = emptyList())
     val hiddenCategoryIds by sortRepository.observeHiddenCategories().collectAsState(initial = emptySet())
@@ -359,6 +361,7 @@ fun ListDetailScreen(
                 item = selectedItem!!,
                 onChangeCategoryClick = { showCategoryPicker = true },
                 onMoveItemClick = { showMoveItemPicker = true },
+                onAddPhotoClick = { selectedItem = null; showPhotoDialog = true },
                 onDeleteItem = {
                     val current = selectedItem
                     if (current != null) {
@@ -430,6 +433,54 @@ fun ListDetailScreen(
             },
             onDismiss = { showMoveItemPicker = false }
         )
+    }
+
+    if (showPhotoDialog) {
+        Dialog(onDismissRequest = { showPhotoDialog = false }) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.add_photo_title),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = stringResource(R.string.add_photo_description),
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        TextButton(onClick = { showPhotoDialog = false }) {
+                            Text(
+                                text = stringResource(R.string.add_photo_from_album),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        TextButton(onClick = { showPhotoDialog = false }) {
+                            Text(
+                                text = stringResource(R.string.add_photo_take),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+            } // Box
+        }
     }
 
     if (justAddedItem != null) {
@@ -560,7 +611,7 @@ private fun ItemCard(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onChangeCategoryClick: () -> Unit = {}, onMoveItemClick: () -> Unit = {}, onDeleteItem: () -> Unit = {}, onDone: (note: String) -> Unit) {
+private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onChangeCategoryClick: () -> Unit = {}, onMoveItemClick: () -> Unit = {}, onAddPhotoClick: () -> Unit = {}, onDeleteItem: () -> Unit = {}, onDone: (note: String) -> Unit) {
     var note by remember(item.id) { mutableStateOf(item.note) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     val noteHint = stringResource(R.string.item_note_hint)
@@ -701,7 +752,8 @@ private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onC
                 SettingsButton(
                     icon = Icons.Filled.CameraAlt,
                     label = stringResource(R.string.add_photo),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onClick = onAddPhotoClick
                 )
             }
             Row(

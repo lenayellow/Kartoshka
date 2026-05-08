@@ -17,6 +17,10 @@
     <string name="category_picker_description">Картошка использует категорию для сортировки списка покупок. Присвойте категорию своему товару.</string>
     <string name="category_own_items">Собственные товары</string>
     <string name="move_item">Перенести товар</string>
+    <string name="add_photo_title">Выбрать фото</string>
+    <string name="add_photo_description">Можно сделать новое фото или выбрать его из альбома.</string>
+    <string name="add_photo_from_album">ВЫБРАТЬ ИЗ АЛЬБОМА</string>
+    <string name="add_photo_take">СФОТОГРАФИРОВАТЬ</string>
     <string name="move_item_title">Перенести товары</string>
     <string name="move_item_description">Можно перенести товар из этого списка в другой, вследствие чего он будет удалён из текущего списка.</string>
     <string name="recently_used">Недавно использованные</string>
