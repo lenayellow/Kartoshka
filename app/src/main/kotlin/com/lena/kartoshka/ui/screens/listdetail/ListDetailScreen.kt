@@ -48,8 +48,10 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Style
@@ -89,6 +91,7 @@ import com.lena.kartoshka.data.Item
 import com.lena.kartoshka.data.ItemCategory
 import com.lena.kartoshka.data.LoyaltyCard
 import com.lena.kartoshka.data.ShoppingList
+import com.lena.kartoshka.data.ItemTag
 import com.lena.kartoshka.data.itemCategories
 import com.lena.kartoshka.data.sampleLoyaltyCards
 import com.lena.kartoshka.data.sort.SortRepository
@@ -96,6 +99,12 @@ import kotlinx.coroutines.launch
 
 private val ItemCardColor = Color(0xFFE07870)
 private val RecentlyUsedCardColor = Color(0xFF4A8579)
+
+private fun ItemTag.toIcon() = when (this) {
+    ItemTag.URGENT      -> Icons.Filled.PriorityHigh
+    ItemTag.ON_SALE     -> Icons.Filled.LocalOffer
+    ItemTag.IF_CONVENIENT -> Icons.Filled.AccessTime
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -321,6 +330,22 @@ fun ListDetailScreen(
         ) {
             AddItemInfoSheet(
                 item = justAddedItem!!,
+                onTagToggle = { tag ->
+                    val current = justAddedItem
+                    if (current != null) {
+                        val idx = activeItems.indexOfFirst { it.id == current.id }
+                        if (idx >= 0) {
+                            val updated = activeItems[idx].let { existing ->
+                                existing.copy(
+                                    tags = if (tag in existing.tags) existing.tags - tag
+                                           else existing.tags + tag
+                                )
+                            }
+                            activeItems[idx] = updated
+                            justAddedItem = updated
+                        }
+                    }
+                },
                 onNotesClick = {
                     val item = justAddedItem
                     justAddedItem = null
@@ -366,6 +391,21 @@ private fun ItemCard(
             color = Color.White.copy(alpha = 0.35f),
             modifier = Modifier.align(Alignment.Center)
         )
+        if (item.tags.isNotEmpty()) {
+            Row(
+                modifier = Modifier.align(Alignment.TopStart),
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                item.tags.sortedBy { it.ordinal }.forEach { tag ->
+                    Icon(
+                        imageVector = tag.toIcon(),
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.9f),
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+            }
+        }
         Text(
             text = item.name,
             fontSize = 13.sp,
@@ -913,12 +953,12 @@ private fun NavItem(icon: ImageVector, label: String, selected: Boolean) {
 @Composable
 private fun AddItemInfoSheet(
     item: Item,
+    onTagToggle: (ItemTag) -> Unit,
     onNotesClick: () -> Unit,
     onNextItemAdd: (String) -> Unit,
     onCancel: () -> Unit
 ) {
     var nextText by remember { mutableStateOf("") }
-    val selectedTags = remember { mutableStateListOf<String>() }
     val nextHint = stringResource(R.string.next_item_hint)
 
     fun submitNext() {
@@ -972,33 +1012,44 @@ private fun AddItemInfoSheet(
             color = MaterialTheme.colorScheme.onSurface
         )
 
-        // Tag chips (visual toggle only)
+        // Tag chips with icons
+        val tagInfos = listOf(
+            Triple(ItemTag.URGENT,         Icons.Filled.PriorityHigh, stringResource(R.string.tag_urgent)),
+            Triple(ItemTag.ON_SALE,        Icons.Filled.LocalOffer,   stringResource(R.string.tag_sale)),
+            Triple(ItemTag.IF_CONVENIENT,  Icons.Filled.AccessTime,   stringResource(R.string.tag_if_convenient))
+        )
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            listOf(
-                stringResource(R.string.tag_urgent),
-                stringResource(R.string.tag_sale),
-                stringResource(R.string.tag_if_convenient)
-            ).forEach { tag ->
-                val isSelected = selectedTags.contains(tag)
+            tagInfos.forEach { (tag, icon, label) ->
+                val isSelected = tag in item.tags
                 Surface(
                     color = if (isSelected) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.surface,
                     shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.clickable {
-                        if (isSelected) selectedTags.remove(tag) else selectedTags.add(tag)
-                    }
+                    modifier = Modifier.clickable { onTagToggle(tag) }
                 ) {
-                    Text(
-                        text = tag,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                                else MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                   else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = label,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                    else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
         }
