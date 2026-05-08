@@ -25,6 +25,14 @@
     <string name="nav_ideas">Ideas</string>
     <string name="nav_offers">Offers</string>
     <string name="nav_profile">Profile</string>
+    <string name="list_settings_configure">Configure list</string>
+    <string name="list_settings_language">Country and language</string>
+    <string name="list_settings_members">List members</string>
+    <string name="list_settings_name_image">Name and image</string>
+    <string name="list_settings_delete">Delete this list</string>
+    <string name="delete_confirm_message">Really delete this list?</string>
+    <string name="delete_confirm_yes">Yes</string>
+    <string name="delete_confirm_no">No, I changed my mind</string>
     <string name="list_menu_title">List parameters</string>
     <string name="list_menu_suggestions">Purchase suggestions</string>
     <string name="list_menu_send">Send list</string>

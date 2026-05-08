@@ -135,6 +135,7 @@ fun ListDetailScreen(
     val addInfoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showListMenu by remember { mutableStateOf(false) }
     val listMenuSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showListSettings by remember { mutableStateOf(false) }
 
     val categoryOrderIds by sortRepository.observeCategoryOrder().collectAsState(initial = emptyList())
     val hiddenCategoryIds by sortRepository.observeHiddenCategories().collectAsState(initial = emptySet())
@@ -327,6 +328,15 @@ fun ListDetailScreen(
                 onBack = { showSortScreen = false }
             )
         }
+
+        if (showListSettings) {
+            ListSettingsScreen(
+                list = list,
+                sortRepository = sortRepository,
+                onBack = { showListSettings = false },
+                onDeleteList = { onBack() }
+            )
+        }
     }
 
     if (selectedItem != null) {
@@ -415,7 +425,10 @@ fun ListDetailScreen(
             sheetState = listMenuSheetState,
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ) {
-            ListMenuSheet()
+            ListMenuSheet(onSettingsClick = {
+                showListMenu = false
+                showListSettings = true
+            })
         }
     }
 }
@@ -1258,7 +1271,7 @@ private fun AddItemInfoSheet(
 }
 
 @Composable
-private fun ListMenuSheet() {
+private fun ListMenuSheet(onSettingsClick: () -> Unit = {}) {
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     Column(
         modifier = Modifier
@@ -1283,7 +1296,7 @@ private fun ListMenuSheet() {
         )
 
         ListMenuItem(icon = Icons.Filled.Favorite, label = stringResource(R.string.list_menu_recommend))
-        ListMenuItem(icon = Icons.Filled.Settings, label = stringResource(R.string.list_menu_settings))
+        ListMenuItem(icon = Icons.Filled.Settings, label = stringResource(R.string.list_menu_settings), onClick = onSettingsClick)
 
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 8.dp),
@@ -1295,11 +1308,11 @@ private fun ListMenuSheet() {
 }
 
 @Composable
-private fun ListMenuItem(icon: ImageVector, label: String) {
+private fun ListMenuItem(icon: ImageVector, label: String, onClick: () -> Unit = {}) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { }
+            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp)

@@ -25,6 +25,14 @@
     <string name="nav_ideas">Идеи</string>
     <string name="nav_offers">Предложения</string>
     <string name="nav_profile">Профиль</string>
+    <string name="list_settings_configure">Настроить список</string>
+    <string name="list_settings_language">Страна и язык</string>
+    <string name="list_settings_members">Участники списка</string>
+    <string name="list_settings_name_image">Название и изображение</string>
+    <string name="list_settings_delete">Удалить этот список</string>
+    <string name="delete_confirm_message">Действительно удалить этот список?</string>
+    <string name="delete_confirm_yes">Да</string>
+    <string name="delete_confirm_no">Нет, я передумал(-а)</string>
     <string name="list_menu_title">Параметры списка</string>
     <string name="list_menu_suggestions">Предложения покупок</string>
     <string name="list_menu_send">Отправить список</string>
