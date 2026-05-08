@@ -21,6 +21,10 @@
     <string name="tag_urgent">Urgent</string>
     <string name="tag_sale">On sale</string>
     <string name="tag_if_convenient">If convenient</string>
+    <string name="sort_list_button">Sort list</string>
+    <string name="sort_screen_title">Sorting</string>
+    <string name="sort_save">Save</string>
+    <string name="sort_description">Kartoshka groups items by category. Arrange them in any order that works for you.</string>
     <plurals name="items">
         <item quantity="one">%d item</item>
         <item quantity="other">%d items</item>

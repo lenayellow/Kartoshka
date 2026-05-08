@@ -12,11 +12,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.lena.kartoshka.data.sampleItemsByList
 import com.lena.kartoshka.data.sampleLists
+import com.lena.kartoshka.data.sort.LocalSortRepository
 import com.lena.kartoshka.ui.screens.listdetail.ListDetailScreen
 import com.lena.kartoshka.ui.screens.mylists.MyListsScreen
 import com.lena.kartoshka.ui.theme.KartoshkaTheme
 
 class MainActivity : ComponentActivity() {
+
+    private val sortRepository by lazy { LocalSortRepository(applicationContext) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -37,6 +41,7 @@ class MainActivity : ComponentActivity() {
                             ListDetailScreen(
                                 list = list,
                                 items = items,
+                                sortRepository = sortRepository,
                                 onBack = { navController.popBackStack() }
                             )
                         }

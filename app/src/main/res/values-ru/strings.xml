@@ -21,6 +21,10 @@
     <string name="tag_urgent">Срочные</string>
     <string name="tag_sale">Акция</string>
     <string name="tag_if_convenient">Если удобно</string>
+    <string name="sort_list_button">Сортировка списка</string>
+    <string name="sort_screen_title">Сортировка</string>
+    <string name="sort_save">Сохранить</string>
+    <string name="sort_description">Картошка группирует товары по категориям. Расположите их в любом порядке — как удобно вам.</string>
     <plurals name="items">
         <item quantity="one">%d товар</item>
         <item quantity="few">%d товара</item>

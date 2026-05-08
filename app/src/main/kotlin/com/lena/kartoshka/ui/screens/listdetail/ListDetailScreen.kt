@@ -2,6 +2,7 @@ package com.lena.kartoshka.ui.screens.listdetail
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items as lazyItems
@@ -37,12 +38,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,10 +55,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,15 +81,23 @@ import com.lena.kartoshka.data.LoyaltyCard
 import com.lena.kartoshka.data.ShoppingList
 import com.lena.kartoshka.data.itemCategories
 import com.lena.kartoshka.data.sampleLoyaltyCards
+import com.lena.kartoshka.data.sort.SortRepository
+import kotlinx.coroutines.launch
 
 private val ItemCardColor = Color(0xFFE07870)
 private val RecentlyUsedCardColor = Color(0xFF4A8579)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ListDetailScreen(list: ShoppingList, items: List<Item>, onBack: () -> Unit) {
+fun ListDetailScreen(
+    list: ShoppingList,
+    items: List<Item>,
+    sortRepository: SortRepository,
+    onBack: () -> Unit
+) {
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val scope = rememberCoroutineScope()
 
     val activeItems = remember { mutableStateListOf(*items.toTypedArray()) }
     val recentlyUsed = remember { mutableStateListOf<Item>() }
@@ -93,96 +105,171 @@ fun ListDetailScreen(list: ShoppingList, items: List<Item>, onBack: () -> Unit) 
 
     var selectedItem by remember { mutableStateOf<Item?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showSortScreen by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surface)
-    ) {
-        Row(
+    val categoryOrderIds by sortRepository.observeCategoryOrder().collectAsState(initial = emptyList())
+    val hiddenCategoryIds by sortRepository.observeHiddenCategories().collectAsState(initial = emptySet())
+
+    // Apply saved order and filter out hidden categories
+    val sortedCategories = remember(categoryOrderIds, hiddenCategoryIds) {
+        val ordered = if (categoryOrderIds.isEmpty()) {
+            itemCategories
+        } else {
+            val positionById = categoryOrderIds.mapIndexed { pos, id -> id to pos }.toMap()
+            itemCategories.sortedBy { positionById[it.id] ?: Int.MAX_VALUE }
+        }
+        ordered.filter { it.id !in hiddenCategoryIds }
+    }
+
+    // Full-screen categories list in saved order (without hidden filter) for the sort screen
+    val categoriesForSort = remember(categoryOrderIds) {
+        if (categoryOrderIds.isEmpty()) {
+            itemCategories
+        } else {
+            val positionById = categoryOrderIds.mapIndexed { pos, id -> id to pos }.toMap()
+            itemCategories.sortedBy { positionById[it.id] ?: Int.MAX_VALUE }
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = statusBarPadding)
-                .padding(horizontal = 4.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface)
         ) {
             Row(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = statusBarPadding)
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.back_to_lists),
-                        tint = MaterialTheme.colorScheme.onSurface
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back_to_lists),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.back_to_lists),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                        fontSize = 16.sp
                     )
                 }
                 Text(
-                    text = stringResource(R.string.back_to_lists),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    fontSize = 16.sp
+                    text = list.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f)
                 )
+                Spacer(modifier = Modifier.weight(1f))
             }
-            Text(
-                text = list.name,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.weight(1f))
-        }
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp)
-        ) {
-            items(activeItems, key = { it.id }) { item ->
-                ItemCard(
-                    item = item,
-                    onLongClick = { selectedItem = item },
-                    onClick = {
-                        activeItems.remove(item)
-                        recentlyUsed.add(0, item)
+            // Sort button
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.clickable { showSortScreen = true }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.SwapVert,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = stringResource(R.string.sort_list_button),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                     }
-                )
-            }
-            item(span = { GridItemSpan(3) }) {
-                LoyaltyCardsSection(cards = sampleLoyaltyCards)
-            }
-            if (recentlyUsed.isNotEmpty()) {
-                item(span = { GridItemSpan(3) }) {
-                    RecentlyUsedSection(items = recentlyUsed)
                 }
             }
-            item(span = { GridItemSpan(3) }) {
-                CategoriesSection(
-                    categories = itemCategories,
-                    expandedIds = expandedCategories,
-                    onToggle = { id ->
-                        if (expandedCategories.contains(id)) expandedCategories.remove(id)
-                        else expandedCategories.add(id)
-                    },
-                    onItemAdd = { name ->
-                        val newItem = Item(
-                            id = "added_${name}_${System.currentTimeMillis()}",
-                            name = name
-                        )
-                        if (activeItems.none { it.name == name }) {
-                            activeItems.add(0, newItem)
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp)
+            ) {
+                items(activeItems, key = { it.id }) { item ->
+                    ItemCard(
+                        item = item,
+                        onLongClick = { selectedItem = item },
+                        onClick = {
+                            activeItems.remove(item)
+                            recentlyUsed.add(0, item)
                         }
+                    )
+                }
+                item(span = { GridItemSpan(3) }) {
+                    LoyaltyCardsSection(cards = sampleLoyaltyCards)
+                }
+                if (recentlyUsed.isNotEmpty()) {
+                    item(span = { GridItemSpan(3) }) {
+                        RecentlyUsedSection(items = recentlyUsed)
                     }
-                )
+                }
+                item(span = { GridItemSpan(3) }) {
+                    CategoriesSection(
+                        categories = sortedCategories,
+                        expandedIds = expandedCategories,
+                        onToggle = { id ->
+                            if (expandedCategories.contains(id)) expandedCategories.remove(id)
+                            else expandedCategories.add(id)
+                        },
+                        onItemAdd = { name ->
+                            val newItem = Item(
+                                id = "added_${name}_${System.currentTimeMillis()}",
+                                name = name
+                            )
+                            if (activeItems.none { it.name == name }) {
+                                activeItems.add(0, newItem)
+                            }
+                        }
+                    )
+                }
             }
+
+            AddItemRow(modifier = Modifier.padding(bottom = navBarPadding))
         }
 
-        AddItemRow(modifier = Modifier.padding(bottom = navBarPadding))
+        if (showSortScreen) {
+            SortScreen(
+                categories = categoriesForSort,
+                hiddenCategoryIds = hiddenCategoryIds,
+                onSave = { orderedIds, hiddenIds ->
+                    scope.launch {
+                        sortRepository.saveCategoryOrder(orderedIds)
+                        sortRepository.saveHiddenCategories(hiddenIds)
+                    }
+                    showSortScreen = false
+                },
+                onBack = { showSortScreen = false }
+            )
+        }
     }
 
     if (selectedItem != null) {
@@ -249,7 +336,6 @@ private fun ItemDetailSheet(item: Item, onDone: () -> Unit) {
             .padding(bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Header
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -271,7 +357,6 @@ private fun ItemDetailSheet(item: Item, onDone: () -> Unit) {
             }
         }
 
-        // Note field
         Surface(
             color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(12.dp),
@@ -301,7 +386,6 @@ private fun ItemDetailSheet(item: Item, onDone: () -> Unit) {
             )
         }
 
-        // Quick chips section
         Text(
             text = stringResource(R.string.item_details_about, item.name),
             fontSize = 16.sp,
@@ -320,7 +404,6 @@ private fun ItemDetailSheet(item: Item, onDone: () -> Unit) {
             QuickChip(label = stringResource(R.string.tag_if_convenient))
         }
 
-        // Settings section
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = stringResource(R.string.settings),
