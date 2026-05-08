@@ -43,6 +43,10 @@
     <string name="list_menu_settings">Настройки списка</string>
     <string name="list_menu_cards">Карты</string>
     <string name="cancel">Отменить</string>
+    <string name="delete_item">Удалить добавленный товар</string>
+    <string name="delete_item_confirm">Действительно удалить этот товар?</string>
+    <string name="delete_item_yes">ДА, УДАЛИТЬ ТОВАР</string>
+    <string name="delete_item_no">НЕТ, Я ПЕРЕДУМАЛ(-А)</string>
     <string name="next_item_hint">Следующий товар…</string>
     <string name="notes">Заметки</string>
     <string name="sort_list_button">Сортировка списка</string>

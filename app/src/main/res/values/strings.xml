@@ -43,6 +43,10 @@
     <string name="list_menu_settings">List settings</string>
     <string name="list_menu_cards">Cards</string>
     <string name="cancel">Cancel</string>
+    <string name="delete_item">Delete item</string>
+    <string name="delete_item_confirm">Really delete this item?</string>
+    <string name="delete_item_yes">Yes, delete item</string>
+    <string name="delete_item_no">No, I changed my mind</string>
     <string name="next_item_hint">Next item…</string>
     <string name="notes">Notes</string>
     <string name="sort_list_button">Sort list</string>

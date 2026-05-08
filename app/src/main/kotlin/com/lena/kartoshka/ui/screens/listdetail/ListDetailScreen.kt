@@ -62,6 +62,8 @@ import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Style
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -106,6 +108,7 @@ import kotlinx.coroutines.launch
 
 private val ItemCardColor = Color(0xFFE07870)
 private val RecentlyUsedCardColor = Color(0xFF4A8579)
+private val DeleteRed = Color(0xFFE53935)
 
 private fun detectCategoryId(name: String): String? =
     itemCategories.firstOrNull { cat -> cat.items.any { it.equals(name, ignoreCase = true) } }?.id
@@ -352,6 +355,14 @@ fun ListDetailScreen(
             ItemDetailSheet(
                 item = selectedItem!!,
                 onChangeCategoryClick = { showCategoryPicker = true },
+                onDeleteItem = {
+                    val current = selectedItem
+                    if (current != null) {
+                        activeItems.removeIf { it.id == current.id }
+                        recentlyUsed.removeIf { it.id == current.id }
+                    }
+                    selectedItem = null
+                },
                 onTagToggle = { tag ->
                     val current = selectedItem
                     if (current != null) {
@@ -528,10 +539,12 @@ private fun ItemCard(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onChangeCategoryClick: () -> Unit = {}, onDone: (note: String) -> Unit) {
+private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onChangeCategoryClick: () -> Unit = {}, onDeleteItem: () -> Unit = {}, onDone: (note: String) -> Unit) {
     var note by remember(item.id) { mutableStateOf(item.note) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
     val noteHint = stringResource(R.string.item_note_hint)
 
+    Box(modifier = Modifier.fillMaxWidth()) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -687,7 +700,70 @@ private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onC
                 )
             }
         }
+
+        Button(
+            onClick = { showDeleteConfirm = true },
+            colors = ButtonDefaults.buttonColors(containerColor = DeleteRed),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = stringResource(R.string.delete_item),
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp
+            )
+        }
     }
+
+    if (showDeleteConfirm) {
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+                .clickable { showDeleteConfirm = false },
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .clickable { }
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.delete_item_confirm),
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        TextButton(onClick = { showDeleteConfirm = false }) {
+                            Text(
+                                text = stringResource(R.string.delete_item_no),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        TextButton(onClick = {
+                            showDeleteConfirm = false
+                            onDeleteItem()
+                        }) {
+                            Text(
+                                text = stringResource(R.string.delete_item_yes),
+                                color = DeleteRed
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+    } // Box
 }
 
 @Composable
