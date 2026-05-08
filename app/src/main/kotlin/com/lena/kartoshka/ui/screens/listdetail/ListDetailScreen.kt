@@ -32,8 +32,12 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -45,6 +49,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Style
@@ -110,6 +115,8 @@ fun ListDetailScreen(
     var selectedItem by remember { mutableStateOf<Item?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showSortScreen by remember { mutableStateOf(false) }
+    var justAddedItem by remember { mutableStateOf<Item?>(null) }
+    val addInfoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val categoryOrderIds by sortRepository.observeCategoryOrder().collectAsState(initial = emptyList())
     val hiddenCategoryIds by sortRepository.observeHiddenCategories().collectAsState(initial = emptySet())
@@ -140,6 +147,7 @@ fun ListDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.surface)
+                .imePadding()
         ) {
             Row(
                 modifier = Modifier
@@ -263,7 +271,16 @@ fun ListDetailScreen(
                 }
             }
 
-            AddItemRow()
+            AddItemRow(onAdd = { name ->
+                val newItem = Item(
+                    id = "added_${name}_${System.currentTimeMillis()}",
+                    name = name
+                )
+                if (activeItems.none { it.name == name }) {
+                    activeItems.add(0, newItem)
+                }
+                justAddedItem = newItem
+            })
             BottomNavBar()
         }
 
@@ -292,6 +309,34 @@ fun ListDetailScreen(
             ItemDetailSheet(
                 item = selectedItem!!,
                 onDone = { selectedItem = null }
+            )
+        }
+    }
+
+    if (justAddedItem != null) {
+        ModalBottomSheet(
+            onDismissRequest = { justAddedItem = null },
+            sheetState = addInfoSheetState,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ) {
+            AddItemInfoSheet(
+                item = justAddedItem!!,
+                onNotesClick = {
+                    val item = justAddedItem
+                    justAddedItem = null
+                    selectedItem = item
+                },
+                onNextItemAdd = { name ->
+                    val newItem = Item(
+                        id = "added_${name}_${System.currentTimeMillis()}",
+                        name = name
+                    )
+                    if (activeItems.none { it.name == name }) {
+                        activeItems.add(0, newItem)
+                    }
+                    justAddedItem = newItem
+                },
+                onCancel = { justAddedItem = null }
             )
         }
     }
@@ -738,9 +783,17 @@ private fun AddLoyaltyCard() {
 }
 
 @Composable
-private fun AddItemRow(modifier: Modifier = Modifier) {
+private fun AddItemRow(modifier: Modifier = Modifier, onAdd: (String) -> Unit = {}) {
     var text by remember { mutableStateOf("") }
     val hint = stringResource(R.string.add_item_hint)
+
+    fun submit() {
+        val name = text.trim()
+        if (name.isNotEmpty()) {
+            onAdd(name)
+            text = ""
+        }
+    }
 
     Row(
         modifier = modifier
@@ -761,16 +814,37 @@ private fun AddItemRow(modifier: Modifier = Modifier) {
                     fontSize = 16.sp
                 ),
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { submit() }),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
                 decorationBox = { inner ->
-                    if (text.isEmpty()) {
-                        Text(
-                            text = hint,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                            fontSize = 16.sp
-                        )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(modifier = Modifier.weight(1f)) {
+                            if (text.isEmpty()) {
+                                Text(
+                                    text = hint,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                    fontSize = 16.sp
+                                )
+                            }
+                            inner()
+                        }
+                        if (text.isNotEmpty()) {
+                            Icon(
+                                imageVector = Icons.Filled.Clear,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .size(18.dp)
+                                    .clickable { text = "" }
+                            )
+                        }
                     }
-                    inner()
                 }
             )
         }
@@ -778,7 +852,8 @@ private fun AddItemRow(modifier: Modifier = Modifier) {
         Box(
             modifier = Modifier
                 .size(52.dp)
-                .background(ItemCardColor, CircleShape),
+                .background(ItemCardColor, CircleShape)
+                .clickable { submit() },
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -831,5 +906,192 @@ private fun NavItem(icon: ImageVector, label: String, selected: Boolean) {
             color = tint,
             textAlign = TextAlign.Center
         )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AddItemInfoSheet(
+    item: Item,
+    onNotesClick: () -> Unit,
+    onNextItemAdd: (String) -> Unit,
+    onCancel: () -> Unit
+) {
+    var nextText by remember { mutableStateOf("") }
+    val selectedTags = remember { mutableStateListOf<String>() }
+    val nextHint = stringResource(R.string.next_item_hint)
+
+    fun submitNext() {
+        val name = nextText.trim()
+        if (name.isNotEmpty()) {
+            onNextItemAdd(name)
+            nextText = ""
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .imePadding()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Item card centred
+        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(ItemCardColor)
+                    .padding(12.dp)
+            ) {
+                Text(
+                    text = item.name.first().uppercaseChar().toString(),
+                    fontSize = 52.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White.copy(alpha = 0.35f),
+                    modifier = Modifier.align(Alignment.Center)
+                )
+                Text(
+                    text = item.name,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                    lineHeight = 16.sp,
+                    maxLines = 2,
+                    modifier = Modifier.align(Alignment.BottomStart)
+                )
+            }
+        }
+
+        Text(
+            text = stringResource(R.string.item_details_about, item.name),
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        // Tag chips (visual toggle only)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf(
+                stringResource(R.string.tag_urgent),
+                stringResource(R.string.tag_sale),
+                stringResource(R.string.tag_if_convenient)
+            ).forEach { tag ->
+                val isSelected = selectedTags.contains(tag)
+                Surface(
+                    color = if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.clickable {
+                        if (isSelected) selectedTags.remove(tag) else selectedTags.add(tag)
+                    }
+                ) {
+                    Text(
+                        text = tag,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                    )
+                }
+            }
+        }
+
+        // Notes button
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onNotesClick() }
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Edit,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = stringResource(R.string.notes),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
+        // "Next item" input + Cancel
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Surface(
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                BasicTextField(
+                    value = nextText,
+                    onValueChange = { nextText = it },
+                    textStyle = TextStyle(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 16.sp
+                    ),
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { submitNext() }),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    decorationBox = { inner ->
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                if (nextText.isEmpty()) {
+                                    Text(
+                                        text = nextHint,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                        fontSize = 16.sp
+                                    )
+                                }
+                                inner()
+                            }
+                            if (nextText.isNotEmpty()) {
+                                Icon(
+                                    imageVector = Icons.Filled.Clear,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                    modifier = Modifier
+                                        .padding(start = 8.dp)
+                                        .size(18.dp)
+                                        .clickable { nextText = "" }
+                                )
+                            }
+                        }
+                    }
+                )
+            }
+            TextButton(onClick = onCancel) {
+                Text(
+                    text = stringResource(R.string.cancel),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp
+                )
+            }
+        }
     }
 }

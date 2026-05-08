@@ -25,6 +25,9 @@
     <string name="nav_ideas">Идеи</string>
     <string name="nav_offers">Предложения</string>
     <string name="nav_profile">Профиль</string>
+    <string name="cancel">Отменить</string>
+    <string name="next_item_hint">Следующий товар…</string>
+    <string name="notes">Заметки</string>
     <string name="sort_list_button">Сортировка списка</string>
     <string name="sort_screen_title">Сортировка</string>
     <string name="sort_save">Сохранить</string>

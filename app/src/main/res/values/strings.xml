@@ -25,6 +25,9 @@
     <string name="nav_ideas">Ideas</string>
     <string name="nav_offers">Offers</string>
     <string name="nav_profile">Profile</string>
+    <string name="cancel">Cancel</string>
+    <string name="next_item_hint">Next item…</string>
+    <string name="notes">Notes</string>
     <string name="sort_list_button">Sort list</string>
     <string name="sort_screen_title">Sorting</string>
     <string name="sort_save">Save</string>
