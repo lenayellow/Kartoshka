@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Link
@@ -87,7 +88,19 @@ fun IdeasScreen(initialListId: String = "", onClose: (() -> Unit)? = null) {
     val filteredRecipes = when (activeFilter) {
         IdeasFilter.ALL -> sampleRecipes.toList()
         IdeasFilter.POPULAR -> sampleRecipes.sortedByDescending { it.likes }
-        IdeasFilter.MY -> sampleRecipes.filter { it.isOwn }
+        IdeasFilter.MY -> sampleRecipes.filter { it.isOwn || it.isSaved }
+    }
+
+    val toggleSave: (Recipe) -> Unit = { recipe ->
+        val index = sampleRecipes.indexOfFirst { it.id == recipe.id }
+        if (index >= 0) {
+            val updated = recipe.copy(
+                isSaved = !recipe.isSaved,
+                likes = if (!recipe.isSaved) recipe.likes + 1 else recipe.likes - 1
+            )
+            sampleRecipes[index] = updated
+            if (selectedRecipe?.id == updated.id) selectedRecipe = updated
+        }
     }
 
     Box(
@@ -130,7 +143,11 @@ fun IdeasScreen(initialListId: String = "", onClose: (() -> Unit)? = null) {
                 contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 items(filteredRecipes, key = { it.id }) { recipe ->
-                    RecipeCard(recipe = recipe, onOpenRecipe = { selectedRecipe = recipe })
+                    RecipeCard(
+                        recipe = recipe,
+                        onOpenRecipe = { selectedRecipe = recipe },
+                        onToggleSave = { toggleSave(recipe) }
+                    )
                 }
             }
         }
@@ -155,6 +172,7 @@ fun IdeasScreen(initialListId: String = "", onClose: (() -> Unit)? = null) {
                 recipe = recipe,
                 initialListId = initialListId.ifEmpty { sampleLists.firstOrNull()?.id ?: "" },
                 onBack = { selectedRecipe = null },
+                onToggleSave = { toggleSave(recipe) },
                 onAddIngredients = { listId, ingredients ->
                     val newItems = ingredients.map { ingredient ->
                         Item(id = "idea_${UUID.randomUUID()}", name = ingredient.name, note = ingredient.amount)
@@ -214,7 +232,7 @@ fun IdeasScreen(initialListId: String = "", onClose: (() -> Unit)? = null) {
 }
 
 @Composable
-private fun RecipeCard(recipe: Recipe, onOpenRecipe: () -> Unit) {
+private fun RecipeCard(recipe: Recipe, onOpenRecipe: () -> Unit, onToggleSave: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -248,11 +266,19 @@ private fun RecipeCard(recipe: Recipe, onOpenRecipe: () -> Unit) {
                 )
             }
             Row(
-                modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
+                    .clickable(onClick = onToggleSave),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Icon(imageVector = Icons.Filled.FavoriteBorder, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
+                Icon(
+                    imageVector = if (recipe.isSaved) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    contentDescription = null,
+                    tint = if (recipe.isSaved) Color(0xFFE57373) else Color.White,
+                    modifier = Modifier.size(18.dp)
+                )
                 Text(text = recipe.likes.toString(), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
             }
         }
@@ -283,6 +309,7 @@ private fun RecipeDetailOverlay(
     recipe: Recipe,
     initialListId: String = sampleLists.firstOrNull()?.id ?: "",
     onBack: () -> Unit,
+    onToggleSave: () -> Unit,
     onAddIngredients: (listId: String, List<Ingredient>) -> Unit
 ) {
     BackHandler { onBack() }
@@ -331,8 +358,18 @@ private fun RecipeDetailOverlay(
         ) {
             CardAction(icon = Icons.Filled.Link, label = stringResource(R.string.ideas_view), onClick = {})
             CardAction(icon = Icons.Filled.Share, label = stringResource(R.string.ideas_share), onClick = {})
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(imageVector = Icons.Filled.FavoriteBorder, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f), modifier = Modifier.size(18.dp))
+            Row(
+                modifier = Modifier.clickable(onClick = onToggleSave),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    imageVector = if (recipe.isSaved) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                    contentDescription = null,
+                    tint = if (recipe.isSaved) Color(0xFFE57373)
+                           else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+                    modifier = Modifier.size(18.dp)
+                )
                 Text(text = recipe.likes.toString(), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f))
             }
         }

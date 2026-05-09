@@ -17,7 +17,8 @@ data class Recipe(
     val coverColor: Color,
     val likes: Int,
     val ingredients: List<Ingredient>,
-    val isOwn: Boolean = false
+    val isOwn: Boolean = false,
+    val isSaved: Boolean = false
 )
 
 val sampleRecipes = mutableStateListOf(
