@@ -64,7 +64,8 @@ fun ListSettingsScreen(
     list: ShoppingList,
     sortRepository: SortRepository,
     onBack: () -> Unit,
-    onDeleteList: () -> Unit
+    onDeleteList: () -> Unit,
+    onEditNameAndImage: () -> Unit = {}
 ) {
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -192,7 +193,8 @@ fun ListSettingsScreen(
                             SettingsActionTile(
                                 icon = Icons.Filled.Edit,
                                 label = stringResource(R.string.list_settings_name_image),
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                onClick = onEditNameAndImage
                             )
                         }
                     }

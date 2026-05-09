@@ -66,6 +66,9 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
+    // Drag-and-drop reordering
+    implementation(libs.reorderable)
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 }

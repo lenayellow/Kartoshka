@@ -10,6 +10,7 @@ datastore = "1.1.1"
 coroutines = "1.8.1"
 lifecycle = "2.8.0"
 navigation = "2.7.7"
+reorderable = "2.4.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -37,6 +38,9 @@ androidx-room-compiler = { group = "androidx.room", name = "room-compiler", vers
 
 # Navigation
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation" }
+
+# Drag-and-drop reordering
+reorderable = { group = "sh.calvin.reorderable", name = "reorderable", version.ref = "reorderable" }
 
 # Coroutines
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }

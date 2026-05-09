@@ -53,7 +53,7 @@ import com.lena.kartoshka.data.sampleLists
 import kotlinx.coroutines.delay
 import java.util.UUID
 
-private val coverColors = listOf(
+val coverColors = listOf(
     Color(0xFF4F8579),
     Color(0xFFDDA68B),
     Color(0xFF7B6B8A),
@@ -69,10 +69,18 @@ private val coverColors = listOf(
 @Composable
 fun NewListScreen(
     initialName: String = "",
-    onListCreated: (String) -> Unit = {}
+    initialColor: Color? = null,
+    editingListId: String? = null,
+    onListCreated: (String) -> Unit = {},
+    onSaved: () -> Unit = {}
 ) {
+    val isEditMode = editingListId != null
+    val startColorIndex = remember {
+        initialColor?.let { c -> coverColors.indexOfFirst { it == c }.coerceAtLeast(0) } ?: 0
+    }
+
     var listName by remember { mutableStateOf(initialName) }
-    var selectedCoverIndex by remember { mutableStateOf(0) }
+    var selectedCoverIndex by remember { mutableStateOf(startColorIndex) }
     var showLoadingDialog by remember { mutableStateOf(false) }
     var createdListId by remember { mutableStateOf("") }
 
@@ -90,7 +98,7 @@ fun NewListScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = stringResource(R.string.create_list_title),
+                text = stringResource(if (isEditMode) R.string.edit_list_title else R.string.create_list_title),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -98,23 +106,34 @@ fun NewListScreen(
             )
             Button(
                 onClick = {
-                    val newId = UUID.randomUUID().toString()
-                    createdListId = newId
-                    sampleLists.add(
-                        ShoppingList(
-                            id = newId,
-                            name = listName.trim(),
-                            itemCount = 0,
-                            color = coverColors[selectedCoverIndex]
+                    if (isEditMode) {
+                        val index = sampleLists.indexOfFirst { it.id == editingListId }
+                        if (index != -1) {
+                            sampleLists[index] = sampleLists[index].copy(
+                                name = listName.trim(),
+                                color = coverColors[selectedCoverIndex]
+                            )
+                        }
+                        onSaved()
+                    } else {
+                        val newId = UUID.randomUUID().toString()
+                        createdListId = newId
+                        sampleLists.add(
+                            ShoppingList(
+                                id = newId,
+                                name = listName.trim(),
+                                itemCount = 0,
+                                color = coverColors[selectedCoverIndex]
+                            )
                         )
-                    )
-                    showLoadingDialog = true
+                        showLoadingDialog = true
+                    }
                 },
                 enabled = listName.isNotBlank(),
                 shape = RoundedCornerShape(50.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.create_list_next),
+                    text = stringResource(if (isEditMode) R.string.sort_save else R.string.create_list_next),
                     fontWeight = FontWeight.Medium
                 )
             }

@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity() {
                     NavHost(navController = navController, startDestination = "lists") {
                         composable("lists") {
                             MyListsScreen(
+                                sortRepository = sortRepository,
                                 onListClick = { listId -> navController.navigate("list/$listId") },
                                 onNewListClick = { navController.navigate("new_list") },
                                 onSuggestionClick = { name ->

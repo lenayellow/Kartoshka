@@ -1,5 +1,6 @@
 package com.lena.kartoshka.ui.screens.mylists
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,17 +21,25 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -42,7 +51,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lena.kartoshka.R
@@ -50,46 +59,88 @@ import com.lena.kartoshka.data.ShoppingList
 import com.lena.kartoshka.data.Suggestion
 import com.lena.kartoshka.data.sampleLists
 import com.lena.kartoshka.data.sampleSuggestions
-import com.lena.kartoshka.ui.theme.KartoshkaTheme
+import com.lena.kartoshka.data.sort.SortRepository
+import com.lena.kartoshka.ui.screens.listdetail.ListSettingsScreen
+import com.lena.kartoshka.ui.screens.newlist.NewListScreen
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 
 @Composable
 fun MyListsScreen(
     modifier: Modifier = Modifier,
+    sortRepository: SortRepository,
     onListClick: (String) -> Unit = {},
     onNewListClick: () -> Unit = {},
     onSuggestionClick: (String) -> Unit = {}
 ) {
     val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    var isEditMode by remember { mutableStateOf(false) }
+    var listForSettings by remember { mutableStateOf<ShoppingList?>(null) }
+    var listToEdit by remember { mutableStateOf<ShoppingList?>(null) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
     ) {
-        Header()
-        LazyColumn(
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                top = 8.dp,
-                bottom = 8.dp + navBarBottom
-            ),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(sampleLists, key = { it.id }) { list ->
-                MyListCard(list = list, onClick = { onListClick(list.id) })
-            }
-            item {
-                NewListCard(onClick = onNewListClick)
-            }
-            item {
-                SuggestionsSection(suggestions = sampleSuggestions, onSuggestionClick = onSuggestionClick)
+        Header(isEditMode = isEditMode, onEditToggle = { isEditMode = !isEditMode })
+
+        if (isEditMode) {
+            EditableList(
+                onSettingsClick = { list -> listForSettings = list },
+                navBarBottom = navBarBottom
+            )
+        } else {
+            LazyColumn(
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 8.dp,
+                    bottom = 8.dp + navBarBottom
+                ),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(sampleLists, key = { it.id }) { list ->
+                    MyListCard(list = list, onClick = { onListClick(list.id) })
+                }
+                item {
+                    NewListCard(onClick = onNewListClick)
+                }
+                item {
+                    SuggestionsSection(suggestions = sampleSuggestions, onSuggestionClick = onSuggestionClick)
+                }
             }
         }
+    }
+
+    listForSettings?.let { list ->
+        ListSettingsScreen(
+            list = list,
+            sortRepository = sortRepository,
+            onBack = { listForSettings = null },
+            onDeleteList = {
+                sampleLists.removeIf { it.id == list.id }
+                listForSettings = null
+            },
+            onEditNameAndImage = {
+                listToEdit = list
+                listForSettings = null
+            }
+        )
+    }
+
+    listToEdit?.let { list ->
+        NewListScreen(
+            initialName = list.name,
+            initialColor = list.color,
+            editingListId = list.id,
+            onSaved = { listToEdit = null }
+        )
     }
 }
 
 @Composable
-private fun Header() {
+private fun Header(isEditMode: Boolean, onEditToggle: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -103,12 +154,97 @@ private fun Header() {
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f)
         )
-        TextButton(onClick = { /* TODO: edit mode */ }) {
+        TextButton(onClick = onEditToggle) {
             Text(
-                text = stringResource(R.string.edit),
+                text = if (isEditMode) stringResource(R.string.done) else stringResource(R.string.edit),
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.Medium
             )
+        }
+    }
+}
+
+@Composable
+private fun EditableList(
+    onSettingsClick: (ShoppingList) -> Unit,
+    navBarBottom: Dp
+) {
+    val lazyListState = rememberLazyListState()
+    val reorderState = rememberReorderableLazyListState(
+        lazyListState = lazyListState,
+        onMove = { from, to ->
+            sampleLists.apply { add(to.index, removeAt(from.index)) }
+        }
+    )
+
+    LazyColumn(
+        state = lazyListState,
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            top = 8.dp,
+            bottom = 8.dp + navBarBottom
+        ),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        items(sampleLists, key = { it.id }) { list ->
+            ReorderableItem(reorderState, key = list.id) { isDragging ->
+                val elevation by animateDpAsState(
+                    targetValue = if (isDragging) 8.dp else 0.dp,
+                    label = "drag_elevation"
+                )
+                Surface(
+                    color = list.color,
+                    shape = RoundedCornerShape(20.dp),
+                    shadowElevation = elevation,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 120.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(20.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = list.name,
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                IconButton(
+                                    onClick = { onSettingsClick(list) },
+                                    modifier = Modifier.size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Settings,
+                                        contentDescription = null,
+                                        tint = Color.White.copy(alpha = 0.8f),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                            ItemCountBadge(count = list.itemCount)
+                        }
+                        Icon(
+                            imageVector = Icons.Filled.DragHandle,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.5f),
+                            modifier = Modifier
+                                .size(32.dp)
+                                .draggableHandle()
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -260,23 +396,3 @@ private fun NewListCard(onClick: () -> Unit) {
 }
 
 private val BadgeRed = Color(0xFFE55353)
-
-@Preview(showBackground = true, backgroundColor = 0xFF121412, widthDp = 360, heightDp = 720)
-@Composable
-private fun MyListsScreenPreview() {
-    KartoshkaTheme {
-        MyListsScreen()
-    }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFF121412, widthDp = 360)
-@Composable
-private fun MyListCardPreview() {
-    KartoshkaTheme {
-        Box(modifier = Modifier.padding(16.dp)) {
-            MyListCard(
-                list = ShoppingList("preview", "Holiday Home", 7, Color(0xFF4F8579))
-            )
-        }
-    }
-}

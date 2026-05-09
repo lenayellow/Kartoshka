@@ -107,6 +107,7 @@ import com.lena.kartoshka.data.ItemTag
 import com.lena.kartoshka.data.itemCategories
 import com.lena.kartoshka.data.sampleLoyaltyCards
 import com.lena.kartoshka.data.sort.SortRepository
+import com.lena.kartoshka.ui.screens.newlist.NewListScreen
 import kotlinx.coroutines.launch
 
 private val ItemCardColor = Color(0xFFE07870)
@@ -145,6 +146,7 @@ fun ListDetailScreen(
     var showListMenu by remember { mutableStateOf(false) }
     val listMenuSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showListSettings by remember { mutableStateOf(false) }
+    var listToEdit by remember { mutableStateOf<ShoppingList?>(null) }
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showMoveItemPicker by remember { mutableStateOf(false) }
     var showPhotoDialog by remember { mutableStateOf(false) }
@@ -349,9 +351,22 @@ fun ListDetailScreen(
                 onDeleteList = {
                     sampleLists.removeIf { it.id == list.id }
                     onBack()
+                },
+                onEditNameAndImage = {
+                    showListSettings = false
+                    listToEdit = list
                 }
             )
         }
+    }
+
+    listToEdit?.let { editList ->
+        NewListScreen(
+            initialName = editList.name,
+            initialColor = editList.color,
+            editingListId = editList.id,
+            onSaved = { listToEdit = null }
+        )
     }
 
     if (selectedItem != null) {
