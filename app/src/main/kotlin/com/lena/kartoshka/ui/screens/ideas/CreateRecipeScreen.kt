@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
@@ -85,9 +86,18 @@ fun CreateRecipeScreen(onClose: () -> Unit) {
     var showPhotoDialog by remember { mutableStateOf(false) }
     var showAddItemsScreen by remember { mutableStateOf(false) }
     var showAddOptionalScreen by remember { mutableStateOf(false) }
+    var nameError by remember { mutableStateOf(false) }
     val coverColor = remember { recipeCoverColors.random() }
     val requiredItems = remember { mutableStateListOf<String>() }
     val optionalItems = remember { mutableStateListOf<String>() }
+    val scrollState = rememberScrollState()
+
+    val hasAnyContent = name.isNotBlank() || description.isNotBlank() || link.isNotEmpty() ||
+            photoSelected || requiredItems.isNotEmpty() || optionalItems.isNotEmpty()
+
+    LaunchedEffect(nameError) {
+        if (nameError) scrollState.animateScrollTo(0)
+    }
 
     Column(
         modifier = Modifier
@@ -108,27 +118,31 @@ fun CreateRecipeScreen(onClose: () -> Unit) {
             Spacer(modifier = Modifier.weight(1f))
             TextButton(
                 onClick = {
-                    sampleRecipes.add(
-                        0,
-                        Recipe(
-                            id = "user_${UUID.randomUUID()}",
-                            title = name.trim(),
-                            author = myCollectionLabel,
-                            tagline = description.trim(),
-                            coverColor = coverColor,
-                            likes = 0,
-                            ingredients = emptyList(),
-                            isOwn = true
+                    if (name.isBlank()) {
+                        nameError = true
+                    } else {
+                        sampleRecipes.add(
+                            0,
+                            Recipe(
+                                id = "user_${UUID.randomUUID()}",
+                                title = name.trim(),
+                                author = myCollectionLabel,
+                                tagline = description.trim(),
+                                coverColor = coverColor,
+                                likes = 0,
+                                ingredients = emptyList(),
+                                isOwn = true
+                            )
                         )
-                    )
-                    onClose()
+                        onClose()
+                    }
                 },
-                enabled = name.isNotBlank()
+                enabled = hasAnyContent
             ) {
                 Text(
                     text = stringResource(R.string.create_recipe_save),
                     fontWeight = FontWeight.Bold,
-                    color = if (name.isNotBlank()) MaterialTheme.colorScheme.primary
+                    color = if (hasAnyContent) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
                 )
             }
@@ -137,7 +151,7 @@ fun CreateRecipeScreen(onClose: () -> Unit) {
         Column(
             modifier = Modifier
                 .weight(1f)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .navigationBarsPadding()
         ) {
             // Photo area
@@ -164,7 +178,10 @@ fun CreateRecipeScreen(onClose: () -> Unit) {
             // Name field
             TextField(
                 value = name,
-                onValueChange = { name = it },
+                onValueChange = {
+                    name = it
+                    if (nameError && it.isNotBlank()) nameError = false
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp),
@@ -173,7 +190,8 @@ fun CreateRecipeScreen(onClose: () -> Unit) {
                     Text(
                         text = stringResource(R.string.create_recipe_name_hint),
                         style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
+                        color = if (nameError) MaterialTheme.colorScheme.error.copy(alpha = 0.7f)
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
                     )
                 },
                 colors = TextFieldDefaults.colors(
@@ -187,7 +205,8 @@ fun CreateRecipeScreen(onClose: () -> Unit) {
 
             HorizontalDivider(
                 modifier = Modifier.padding(horizontal = 16.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f)
+                color = if (nameError) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f)
             )
 
             // Description + link icon
