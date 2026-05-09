@@ -98,6 +98,11 @@
     <string name="create_recipe_add_optional">+ Add optional items</string>
     <string name="create_recipe_add_link">Add link</string>
     <string name="create_recipe_link_hint">https://</string>
+    <string name="add_items_title">Add items</string>
+    <string name="add_items_search_hint">Find item…</string>
+    <string name="add_items_empty_title">Select items for the template</string>
+    <string name="add_items_empty_desc">Search or browse the catalog</string>
+    <string name="create_recipe_add_more">+ Add more</string>
 
     <plurals name="items">
         <item quantity="one">%d item</item>

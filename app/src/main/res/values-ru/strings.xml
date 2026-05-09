@@ -98,6 +98,11 @@
     <string name="create_recipe_add_optional">+ Добавить необязательные товары</string>
     <string name="create_recipe_add_link">Добавить ссылку</string>
     <string name="create_recipe_link_hint">https://</string>
+    <string name="add_items_title">Добавить товары</string>
+    <string name="add_items_search_hint">Найти товар…</string>
+    <string name="add_items_empty_title">Выберите товары для шаблона</string>
+    <string name="add_items_empty_desc">Поиск или просмотр каталога</string>
+    <string name="create_recipe_add_more">+ Добавить ещё</string>
 
     <plurals name="items">
         <item quantity="one">%d товар</item>

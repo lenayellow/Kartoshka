@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.LocalDining
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -33,6 +35,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,6 +48,8 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lena.kartoshka.R
@@ -65,6 +70,8 @@ private val recipeCoverColors = listOf(
     Color(0xFFC4B882)
 )
 
+private val itemCardColor = Color(0xFFE07870)
+
 @Composable
 fun CreateRecipeScreen(onClose: () -> Unit) {
     BackHandler { onClose() }
@@ -76,7 +83,11 @@ fun CreateRecipeScreen(onClose: () -> Unit) {
     var photoSelected by remember { mutableStateOf(false) }
     var showLinkDialog by remember { mutableStateOf(false) }
     var showPhotoDialog by remember { mutableStateOf(false) }
+    var showAddItemsScreen by remember { mutableStateOf(false) }
+    var showAddOptionalScreen by remember { mutableStateOf(false) }
     val coverColor = remember { recipeCoverColors.random() }
+    val requiredItems = remember { mutableStateListOf<String>() }
+    val optionalItems = remember { mutableStateListOf<String>() }
 
     Column(
         modifier = Modifier
@@ -237,15 +248,33 @@ fun CreateRecipeScreen(onClose: () -> Unit) {
                             cornerRadius = CornerRadius(16.dp.toPx())
                         )
                     }
-                    .clickable { }
-                    .padding(vertical = 20.dp),
-                contentAlignment = Alignment.Center
+                    .clickable { showAddItemsScreen = true }
             ) {
-                Text(
-                    text = stringResource(R.string.create_recipe_add_items),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    fontSize = 15.sp
-                )
+                if (requiredItems.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.create_recipe_add_items),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            fontSize = 15.sp
+                        )
+                    }
+                } else {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        RecipeItemGrid(items = requiredItems)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.create_recipe_add_more),
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -279,15 +308,33 @@ fun CreateRecipeScreen(onClose: () -> Unit) {
                             cornerRadius = CornerRadius(16.dp.toPx())
                         )
                     }
-                    .clickable { }
-                    .padding(vertical = 20.dp),
-                contentAlignment = Alignment.Center
+                    .clickable { showAddOptionalScreen = true }
             ) {
-                Text(
-                    text = stringResource(R.string.create_recipe_add_optional),
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    fontSize = 15.sp
-                )
+                if (optionalItems.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.create_recipe_add_optional),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            fontSize = 15.sp
+                        )
+                    }
+                } else {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        RecipeItemGrid(items = optionalItems)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.create_recipe_add_more),
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -388,6 +435,80 @@ fun CreateRecipeScreen(onClose: () -> Unit) {
                     }
                 }
             }
+        }
+    }
+
+    // Add items overlay
+    if (showAddItemsScreen) {
+        AddItemsScreen(
+            initialSelection = requiredItems.toList(),
+            onDone = { items ->
+                requiredItems.clear()
+                requiredItems.addAll(items)
+                showAddItemsScreen = false
+            },
+            onClose = { showAddItemsScreen = false }
+        )
+    }
+
+    // Add optional items overlay
+    if (showAddOptionalScreen) {
+        AddItemsScreen(
+            initialSelection = optionalItems.toList(),
+            onDone = { items ->
+                optionalItems.clear()
+                optionalItems.addAll(items)
+                showAddOptionalScreen = false
+            },
+            onClose = { showAddOptionalScreen = false }
+        )
+    }
+}
+
+@Composable
+private fun RecipeItemGrid(items: List<String>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items.chunked(3).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { name ->
+                    RecipeItemCard(name = name, modifier = Modifier.weight(1f))
+                }
+                repeat(3 - row.size) { Spacer(modifier = Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecipeItemCard(name: String, modifier: Modifier = Modifier) {
+    Surface(
+        color = itemCardColor,
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier.aspectRatio(1f)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Filled.LocalDining,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.35f),
+                modifier = Modifier.size(26.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = name,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
