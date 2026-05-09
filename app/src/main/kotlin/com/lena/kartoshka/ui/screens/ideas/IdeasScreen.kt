@@ -70,15 +70,19 @@ import com.lena.kartoshka.R
 import com.lena.kartoshka.data.Ingredient
 import com.lena.kartoshka.data.Item
 import com.lena.kartoshka.data.Recipe
-import com.lena.kartoshka.data.sampleItemsByList
-import com.lena.kartoshka.data.sampleLists
+import com.lena.kartoshka.data.ShoppingList
 import com.lena.kartoshka.data.sampleRecipes
 import java.util.UUID
 
 private enum class IdeasFilter { ALL, POPULAR, MY }
 
 @Composable
-fun IdeasScreen(initialListId: String = "", onClose: (() -> Unit)? = null) {
+fun IdeasScreen(
+    initialListId: String = "",
+    lists: List<ShoppingList> = emptyList(),
+    onAddIngredients: (listId: String, items: List<Item>) -> Unit = { _, _ -> },
+    onClose: (() -> Unit)? = null
+) {
     if (onClose != null) BackHandler { onClose() }
     var selectedRecipe by remember { mutableStateOf<Recipe?>(null) }
     var activeFilter by remember { mutableStateOf(IdeasFilter.ALL) }
@@ -170,14 +174,15 @@ fun IdeasScreen(initialListId: String = "", onClose: (() -> Unit)? = null) {
         selectedRecipe?.let { recipe ->
             RecipeDetailOverlay(
                 recipe = recipe,
-                initialListId = initialListId.ifEmpty { sampleLists.firstOrNull()?.id ?: "" },
+                initialListId = initialListId.ifEmpty { lists.firstOrNull()?.id ?: "" },
+                lists = lists,
                 onBack = { selectedRecipe = null },
                 onToggleSave = { toggleSave(recipe) },
                 onAddIngredients = { listId, ingredients ->
                     val newItems = ingredients.map { ingredient ->
                         Item(id = "idea_${UUID.randomUUID()}", name = ingredient.name, note = ingredient.amount)
                     }
-                    sampleItemsByList.getOrPut(listId) { mutableListOf() }.addAll(newItems)
+                    onAddIngredients(listId, newItems)
                     selectedRecipe = null
                     showSuccessDialog = true
                 }
@@ -307,7 +312,8 @@ private fun CardAction(icon: ImageVector, label: String, modifier: Modifier = Mo
 @Composable
 private fun RecipeDetailOverlay(
     recipe: Recipe,
-    initialListId: String = sampleLists.firstOrNull()?.id ?: "",
+    initialListId: String = "",
+    lists: List<ShoppingList> = emptyList(),
     onBack: () -> Unit,
     onToggleSave: () -> Unit,
     onAddIngredients: (listId: String, List<Ingredient>) -> Unit
@@ -320,7 +326,7 @@ private fun RecipeDetailOverlay(
 
     val regularIngredients = recipe.ingredients.filter { !it.isProbablyOwned }
     val ownedIngredients = recipe.ingredients.filter { it.isProbablyOwned }
-    val selectedList = sampleLists.find { it.id == selectedListId } ?: sampleLists.firstOrNull()
+    val selectedList = lists.find { it.id == selectedListId } ?: lists.firstOrNull()
 
     Column(
         modifier = Modifier
@@ -440,7 +446,7 @@ private fun RecipeDetailOverlay(
                     }
                 }
                 DropdownMenu(expanded = showListDropdown, onDismissRequest = { showListDropdown = false }) {
-                    sampleLists.forEach { list ->
+                    lists.forEach { list ->
                         DropdownMenuItem(
                             text = { Text(list.name) },
                             onClick = { selectedListId = list.id; showListDropdown = false }

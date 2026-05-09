@@ -55,11 +55,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lena.kartoshka.R
+import androidx.compose.runtime.rememberCoroutineScope
+import com.lena.kartoshka.data.AppRepository
 import com.lena.kartoshka.data.ShoppingList
 import com.lena.kartoshka.data.Suggestion
-import com.lena.kartoshka.data.sampleLists
 import com.lena.kartoshka.data.sampleSuggestions
 import com.lena.kartoshka.data.sort.SortRepository
+import kotlinx.coroutines.launch
 import com.lena.kartoshka.ui.screens.listdetail.ListSettingsScreen
 import com.lena.kartoshka.ui.screens.newlist.NewListScreen
 import sh.calvin.reorderable.ReorderableItem
@@ -68,12 +70,15 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 @Composable
 fun MyListsScreen(
     modifier: Modifier = Modifier,
+    lists: List<ShoppingList>,
     sortRepository: SortRepository,
+    appRepository: AppRepository,
     onListClick: (String) -> Unit = {},
     onNewListClick: () -> Unit = {},
     onSuggestionClick: (String) -> Unit = {}
 ) {
     val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val scope = rememberCoroutineScope()
     var isEditMode by remember { mutableStateOf(false) }
     var listForSettings by remember { mutableStateOf<ShoppingList?>(null) }
     var listToEdit by remember { mutableStateOf<ShoppingList?>(null) }
@@ -87,6 +92,7 @@ fun MyListsScreen(
 
         if (isEditMode) {
             EditableList(
+                lists = lists,
                 onSettingsClick = { list -> listForSettings = list },
                 navBarBottom = navBarBottom
             )
@@ -100,7 +106,7 @@ fun MyListsScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(sampleLists, key = { it.id }) { list ->
+                items(lists, key = { it.id }) { list ->
                     MyListCard(list = list, onClick = { onListClick(list.id) })
                 }
                 item {
@@ -119,7 +125,7 @@ fun MyListsScreen(
             sortRepository = sortRepository,
             onBack = { listForSettings = null },
             onDeleteList = {
-                sampleLists.removeIf { it.id == list.id }
+                scope.launch { appRepository.deleteList(list.id) }
                 listForSettings = null
             },
             onEditNameAndImage = {
@@ -134,7 +140,10 @@ fun MyListsScreen(
             initialName = list.name,
             initialColor = list.color,
             editingListId = list.id,
-            onSaved = { listToEdit = null }
+            onSaved = { updatedList ->
+                scope.launch { appRepository.updateList(updatedList) }
+                listToEdit = null
+            }
         )
     }
 }
@@ -166,14 +175,16 @@ private fun Header(isEditMode: Boolean, onEditToggle: () -> Unit) {
 
 @Composable
 private fun EditableList(
+    lists: List<ShoppingList>,
     onSettingsClick: (ShoppingList) -> Unit,
     navBarBottom: Dp
 ) {
+    val localLists = remember(lists) { lists.toMutableList() }
     val lazyListState = rememberLazyListState()
     val reorderState = rememberReorderableLazyListState(
         lazyListState = lazyListState,
         onMove = { from, to ->
-            sampleLists.apply { add(to.index, removeAt(from.index)) }
+            localLists.apply { add(to.index, removeAt(from.index)) }
         }
     )
 
@@ -188,7 +199,7 @@ private fun EditableList(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier.fillMaxSize()
     ) {
-        items(sampleLists, key = { it.id }) { list ->
+        items(localLists, key = { it.id }) { list ->
             ReorderableItem(reorderState, key = list.id) { isDragging ->
                 val elevation by animateDpAsState(
                     targetValue = if (isDragging) 8.dp else 0.dp,

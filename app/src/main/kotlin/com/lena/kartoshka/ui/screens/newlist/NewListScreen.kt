@@ -49,7 +49,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.lena.kartoshka.R
 import com.lena.kartoshka.data.ShoppingList
-import com.lena.kartoshka.data.sampleLists
 import kotlinx.coroutines.delay
 import java.util.UUID
 
@@ -71,8 +70,8 @@ fun NewListScreen(
     initialName: String = "",
     initialColor: Color? = null,
     editingListId: String? = null,
-    onListCreated: (String) -> Unit = {},
-    onSaved: () -> Unit = {}
+    onListCreated: (ShoppingList) -> Unit = {},
+    onSaved: (ShoppingList) -> Unit = {}
 ) {
     val isEditMode = editingListId != null
     val startColorIndex = remember {
@@ -82,7 +81,7 @@ fun NewListScreen(
     var listName by remember { mutableStateOf(initialName) }
     var selectedCoverIndex by remember { mutableStateOf(startColorIndex) }
     var showLoadingDialog by remember { mutableStateOf(false) }
-    var createdListId by remember { mutableStateOf("") }
+    var createdList by remember { mutableStateOf<ShoppingList?>(null) }
 
     Column(
         modifier = Modifier
@@ -107,25 +106,22 @@ fun NewListScreen(
             Button(
                 onClick = {
                     if (isEditMode) {
-                        val index = sampleLists.indexOfFirst { it.id == editingListId }
-                        if (index != -1) {
-                            sampleLists[index] = sampleLists[index].copy(
-                                name = listName.trim(),
-                                color = coverColors[selectedCoverIndex]
-                            )
-                        }
-                        onSaved()
-                    } else {
-                        val newId = UUID.randomUUID().toString()
-                        createdListId = newId
-                        sampleLists.add(
+                        onSaved(
                             ShoppingList(
-                                id = newId,
+                                id = editingListId!!,
                                 name = listName.trim(),
                                 itemCount = 0,
                                 color = coverColors[selectedCoverIndex]
                             )
                         )
+                    } else {
+                        val newList = ShoppingList(
+                            id = UUID.randomUUID().toString(),
+                            name = listName.trim(),
+                            itemCount = 0,
+                            color = coverColors[selectedCoverIndex]
+                        )
+                        createdList = newList
                         showLoadingDialog = true
                     }
                 },
@@ -187,7 +183,7 @@ fun NewListScreen(
     if (showLoadingDialog) {
         LaunchedEffect(Unit) {
             delay(1500)
-            onListCreated(createdListId)
+            createdList?.let { onListCreated(it) }
         }
         Dialog(
             onDismissRequest = {},

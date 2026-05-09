@@ -77,6 +77,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -98,11 +99,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lena.kartoshka.R
+import com.lena.kartoshka.data.AppRepository
 import com.lena.kartoshka.data.Item
 import com.lena.kartoshka.data.ItemCategory
 import com.lena.kartoshka.data.LoyaltyCard
 import com.lena.kartoshka.data.ShoppingList
-import com.lena.kartoshka.data.sampleLists
 import com.lena.kartoshka.data.ItemTag
 import com.lena.kartoshka.data.itemCategories
 import com.lena.kartoshka.data.sampleLoyaltyCards
@@ -129,7 +130,9 @@ private fun ItemTag.toIcon() = when (this) {
 fun ListDetailScreen(
     list: ShoppingList,
     items: List<Item>,
+    allLists: List<ShoppingList>,
     sortRepository: SortRepository,
+    appRepository: AppRepository,
     onBack: () -> Unit
 ) {
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -137,6 +140,17 @@ fun ListDetailScreen(
 
     val activeItems = remember { mutableStateListOf(*items.toTypedArray()) }
     val recentlyUsed = remember { mutableStateListOf<Item>() }
+
+    // Sync items added or updated from outside (e.g., from IdeasScreen via Room)
+    LaunchedEffect(items) {
+        val existingIds = (activeItems + recentlyUsed).map { it.id }.toSet()
+        val newItems = items.filter { it.id !in existingIds }
+        if (newItems.isNotEmpty()) activeItems.addAll(0, newItems)
+        items.forEach { roomItem ->
+            val idx = activeItems.indexOfFirst { it.id == roomItem.id }
+            if (idx >= 0 && activeItems[idx] != roomItem) activeItems[idx] = roomItem
+        }
+    }
     val expandedCategories = remember { mutableStateListOf<String>() }
 
     var selectedItem by remember { mutableStateOf<Item?>(null) }
@@ -280,6 +294,10 @@ fun ListDetailScreen(
                         onClick = {
                             activeItems.remove(item)
                             recentlyUsed.add(0, item)
+                            scope.launch {
+                                appRepository.deleteItem(item.id)
+                                appRepository.recordPurchase(item, list.id)
+                            }
                         }
                     )
                 }
@@ -293,6 +311,7 @@ fun ListDetailScreen(
                             onItemClick = { item ->
                                 recentlyUsed.remove(item)
                                 activeItems.add(0, item)
+                                scope.launch { appRepository.insertItem(item, list.id) }
                             }
                         )
                     }
@@ -312,6 +331,7 @@ fun ListDetailScreen(
                             )
                             if (activeItems.none { it.name == name }) {
                                 activeItems.add(0, newItem)
+                                scope.launch { appRepository.insertItem(newItem, list.id) }
                             }
                         }
                     )
@@ -325,6 +345,7 @@ fun ListDetailScreen(
                 )
                 if (activeItems.none { it.name == name }) {
                     activeItems.add(0, newItem)
+                    scope.launch { appRepository.insertItem(newItem, list.id) }
                 }
                 justAddedItem = newItem
             })
@@ -351,7 +372,7 @@ fun ListDetailScreen(
                 sortRepository = sortRepository,
                 onBack = { showListSettings = false },
                 onDeleteList = {
-                    sampleLists.removeIf { it.id == list.id }
+                    scope.launch { appRepository.deleteList(list.id) }
                     onBack()
                 },
                 onEditNameAndImage = {
@@ -361,8 +382,27 @@ fun ListDetailScreen(
             )
         }
 
+        listToEdit?.let { editList ->
+            NewListScreen(
+                initialName = editList.name,
+                initialColor = editList.color,
+                editingListId = editList.id,
+                onSaved = { updatedList ->
+                    scope.launch { appRepository.updateList(updatedList) }
+                    listToEdit = null
+                }
+            )
+        }
+
         if (showIdeasScreen) {
-            IdeasScreen(initialListId = list.id, onClose = { showIdeasScreen = false })
+            IdeasScreen(
+                initialListId = list.id,
+                lists = allLists,
+                onAddIngredients = { listId, newItems ->
+                    scope.launch { appRepository.insertItems(listId, newItems) }
+                },
+                onClose = { showIdeasScreen = false }
+            )
         }
       }
 
@@ -371,15 +411,6 @@ fun ListDetailScreen(
           onIdeasClick = { showIdeasScreen = true },
           onListsClick = { showIdeasScreen = false }
       )
-    }
-
-    listToEdit?.let { editList ->
-        NewListScreen(
-            initialName = editList.name,
-            initialColor = editList.color,
-            editingListId = editList.id,
-            onSaved = { listToEdit = null }
-        )
     }
 
     if (selectedItem != null) {
@@ -398,6 +429,7 @@ fun ListDetailScreen(
                     if (current != null) {
                         activeItems.removeIf { it.id == current.id }
                         recentlyUsed.removeIf { it.id == current.id }
+                        scope.launch { appRepository.deleteItem(current.id) }
                     }
                     selectedItem = null
                 },
@@ -412,6 +444,7 @@ fun ListDetailScreen(
                         val rIdx = recentlyUsed.indexOfFirst { it.id == current.id }
                         if (rIdx >= 0) recentlyUsed[rIdx] = updated
                         selectedItem = updated
+                        scope.launch { appRepository.updateItem(updated, list.id) }
                     }
                 },
                 onDone = { note ->
@@ -422,6 +455,7 @@ fun ListDetailScreen(
                         if (aIdx >= 0) activeItems[aIdx] = updated
                         val rIdx = recentlyUsed.indexOfFirst { it.id == current.id }
                         if (rIdx >= 0) recentlyUsed[rIdx] = updated
+                        scope.launch { appRepository.updateItem(updated, list.id) }
                     }
                     selectedItem = null
                 }
@@ -442,6 +476,7 @@ fun ListDetailScreen(
                     val rIdx = recentlyUsed.indexOfFirst { it.id == current.id }
                     if (rIdx >= 0) recentlyUsed[rIdx] = updated
                     selectedItem = updated
+                    scope.launch { appRepository.updateItem(updated, list.id) }
                 }
                 showCategoryPicker = false
             },
@@ -452,12 +487,13 @@ fun ListDetailScreen(
     if (showMoveItemPicker && selectedItem != null) {
         MoveItemSheet(
             currentListId = list.id,
-            allLists = sampleLists,
+            allLists = allLists,
             onListSelected = { targetList ->
                 val current = selectedItem
                 if (current != null && targetList.id != list.id) {
                     activeItems.removeIf { it.id == current.id }
                     recentlyUsed.removeIf { it.id == current.id }
+                    scope.launch { appRepository.moveItem(current, targetList.id) }
                 }
                 showMoveItemPicker = false
                 selectedItem = null
@@ -535,6 +571,7 @@ fun ListDetailScreen(
                             }
                             activeItems[idx] = updated
                             justAddedItem = updated
+                            scope.launch { appRepository.updateItem(updated, list.id) }
                         }
                     }
                 },
@@ -550,6 +587,7 @@ fun ListDetailScreen(
                     )
                     if (activeItems.none { it.name == name }) {
                         activeItems.add(0, newItem)
+                        scope.launch { appRepository.insertItem(newItem, list.id) }
                     }
                     justAddedItem = newItem
                 },
