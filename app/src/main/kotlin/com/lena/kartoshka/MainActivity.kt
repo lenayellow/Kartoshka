@@ -1,5 +1,6 @@
 package com.lena.kartoshka
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -7,9 +8,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.lena.kartoshka.data.sampleItemsByList
 import com.lena.kartoshka.data.sampleLists
 import com.lena.kartoshka.data.sort.LocalSortRepository
@@ -34,11 +37,21 @@ class MainActivity : ComponentActivity() {
                         composable("lists") {
                             MyListsScreen(
                                 onListClick = { listId -> navController.navigate("list/$listId") },
-                                onNewListClick = { navController.navigate("new_list") }
+                                onNewListClick = { navController.navigate("new_list") },
+                                onSuggestionClick = { name ->
+                                    navController.navigate("new_list?name=${Uri.encode(name)}")
+                                }
                             )
                         }
-                        composable("new_list") {
+                        composable(
+                            route = "new_list?name={name}",
+                            arguments = listOf(navArgument("name") {
+                                type = NavType.StringType
+                                defaultValue = ""
+                            })
+                        ) { backStackEntry ->
                             NewListScreen(
+                                initialName = backStackEntry.arguments?.getString("name") ?: "",
                                 onListCreated = { listId ->
                                     navController.navigate("share_list/$listId")
                                 }

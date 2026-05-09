@@ -68,9 +68,10 @@ private val coverColors = listOf(
 
 @Composable
 fun NewListScreen(
+    initialName: String = "",
     onListCreated: (String) -> Unit = {}
 ) {
-    var listName by remember { mutableStateOf("") }
+    var listName by remember { mutableStateOf(initialName) }
     var selectedCoverIndex by remember { mutableStateOf(0) }
     var showLoadingDialog by remember { mutableStateOf(false) }
     var createdListId by remember { mutableStateOf("") }

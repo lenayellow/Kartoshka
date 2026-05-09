@@ -346,7 +346,10 @@ fun ListDetailScreen(
                 list = list,
                 sortRepository = sortRepository,
                 onBack = { showListSettings = false },
-                onDeleteList = { onBack() }
+                onDeleteList = {
+                    sampleLists.removeIf { it.id == list.id }
+                    onBack()
+                }
             )
         }
     }

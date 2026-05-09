@@ -56,7 +56,8 @@ import com.lena.kartoshka.ui.theme.KartoshkaTheme
 fun MyListsScreen(
     modifier: Modifier = Modifier,
     onListClick: (String) -> Unit = {},
-    onNewListClick: () -> Unit = {}
+    onNewListClick: () -> Unit = {},
+    onSuggestionClick: (String) -> Unit = {}
 ) {
     val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     Column(
@@ -81,7 +82,7 @@ fun MyListsScreen(
                 NewListCard(onClick = onNewListClick)
             }
             item {
-                SuggestionsSection(suggestions = sampleSuggestions)
+                SuggestionsSection(suggestions = sampleSuggestions, onSuggestionClick = onSuggestionClick)
             }
         }
     }
@@ -178,7 +179,7 @@ private fun ArrowCircle() {
 }
 
 @Composable
-private fun SuggestionsSection(suggestions: List<Suggestion>) {
+private fun SuggestionsSection(suggestions: List<Suggestion>, onSuggestionClick: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             text = stringResource(R.string.suggestions_title),
@@ -188,17 +189,18 @@ private fun SuggestionsSection(suggestions: List<Suggestion>) {
         )
         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             items(suggestions, key = { it.id }) { suggestion ->
-                SuggestionCard(suggestion = suggestion)
+                SuggestionCard(suggestion = suggestion, onClick = { onSuggestionClick(suggestion.name) })
             }
         }
     }
 }
 
 @Composable
-private fun SuggestionCard(suggestion: Suggestion) {
+private fun SuggestionCard(suggestion: Suggestion, onClick: () -> Unit = {}) {
     Surface(
         color = suggestion.color,
         shape = RoundedCornerShape(16.dp),
+        onClick = onClick,
         modifier = Modifier.size(width = 120.dp, height = 90.dp)
     ) {
         Column(
