@@ -1255,7 +1255,6 @@ private fun BottomNavBar(
         ) {
             NavItem(icon = Icons.Filled.Checklist,  label = stringResource(R.string.nav_lists),   selected = activeTab == 0, onClick = onListsClick)
             NavItem(icon = Icons.Filled.Style,       label = stringResource(R.string.nav_ideas),   selected = activeTab == 1, onClick = onIdeasClick)
-            NavItem(icon = Icons.Filled.LocalOffer,  label = stringResource(R.string.nav_offers),  selected = activeTab == 2)
             NavItem(icon = Icons.Filled.Person,      label = stringResource(R.string.nav_profile), selected = activeTab == 3)
         }
     }
