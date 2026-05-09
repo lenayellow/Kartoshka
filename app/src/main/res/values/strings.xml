@@ -41,6 +41,7 @@
     <string name="delete_confirm_message">Really delete this list?</string>
     <string name="delete_confirm_yes">Yes</string>
     <string name="delete_confirm_no">No, I changed my mind</string>
+    <string name="list_menu_ideas">Ideas</string>
     <string name="list_menu_title">List parameters</string>
     <string name="list_menu_suggestions">Purchase suggestions</string>
     <string name="list_menu_send">Send list</string>
@@ -74,6 +75,20 @@
     <string name="share_or">OR</string>
     <string name="share_email_hint">Email address or contact</string>
     <string name="share_send_invite">Send invite</string>
+    <string name="ideas_title">Ideas</string>
+    <string name="ideas_filter_all">All</string>
+    <string name="ideas_filter_popular">Popular</string>
+    <string name="ideas_filter_my">My collection</string>
+    <string name="ideas_recipe_badge">Recipe</string>
+    <string name="ideas_view">View recipe</string>
+    <string name="ideas_share">Share</string>
+    <string name="ideas_add_to_list">Add to list</string>
+    <string name="ideas_ingredients">Ingredients</string>
+    <string name="ideas_probably_have">You probably already have</string>
+    <string name="ideas_active_list">Active list</string>
+    <string name="ideas_add_button">Add ingredients (%1$d)</string>
+    <string name="ideas_success">Done!</string>
+
     <plurals name="items">
         <item quantity="one">%d item</item>
         <item quantity="other">%d items</item>

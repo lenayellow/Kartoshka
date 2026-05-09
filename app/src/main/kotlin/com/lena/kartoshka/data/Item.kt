@@ -8,11 +8,11 @@ data class Item(
     val categoryId: String? = null
 )
 
-val sampleItemsByList: Map<String, List<Item>> = mapOf(
-    "1" to listOf(
+val sampleItemsByList: MutableMap<String, MutableList<Item>> = mutableMapOf(
+    "1" to mutableListOf(
         Item("1_1", "Молоко")
     ),
-    "2" to listOf(
+    "2" to mutableListOf(
         Item("2_1", "Хлеб"),
         Item("2_2", "Масло"),
         Item("2_3", "Яйца"),
@@ -20,7 +20,7 @@ val sampleItemsByList: Map<String, List<Item>> = mapOf(
         Item("2_5", "Йогурт"),
         Item("2_6", "Апельсины")
     ),
-    "3" to listOf(
+    "3" to mutableListOf(
         Item("3_1", "Уголь"),
         Item("3_2", "Дрова"),
         Item("3_3", "Шашлык"),
@@ -29,7 +29,7 @@ val sampleItemsByList: Map<String, List<Item>> = mapOf(
         Item("3_6", "Пиво"),
         Item("3_7", "Вода")
     ),
-    "4" to listOf(
+    "4" to mutableListOf(
         Item("4_1", "Кофе"),
         Item("4_2", "Чай"),
         Item("4_3", "Печенье"),
@@ -38,7 +38,7 @@ val sampleItemsByList: Map<String, List<Item>> = mapOf(
         Item("4_6", "Зубная паста"),
         Item("4_7", "Шампунь")
     ),
-    "5" to listOf(
+    "5" to mutableListOf(
         Item("5_1", "Рамки"),
         Item("5_2", "Ящик"),
         Item("5_3", "Подушки"),

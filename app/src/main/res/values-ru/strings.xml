@@ -41,6 +41,7 @@
     <string name="delete_confirm_message">Действительно удалить этот список?</string>
     <string name="delete_confirm_yes">Да</string>
     <string name="delete_confirm_no">Нет, я передумал(-а)</string>
+    <string name="list_menu_ideas">Идеи</string>
     <string name="list_menu_title">Параметры списка</string>
     <string name="list_menu_suggestions">Предложения покупок</string>
     <string name="list_menu_send">Отправить список</string>
@@ -74,6 +75,20 @@
     <string name="share_or">ИЛИ</string>
     <string name="share_email_hint">Адрес эл. почты или контакт</string>
     <string name="share_send_invite">Отправить приглашение</string>
+    <string name="ideas_title">Идеи</string>
+    <string name="ideas_filter_all">Все</string>
+    <string name="ideas_filter_popular">Популярные</string>
+    <string name="ideas_filter_my">Моя подборка</string>
+    <string name="ideas_recipe_badge">Рецепт</string>
+    <string name="ideas_view">Просмотреть рецепт</string>
+    <string name="ideas_share">Поделиться</string>
+    <string name="ideas_add_to_list">Добавить в список</string>
+    <string name="ideas_ingredients">Ингредиенты</string>
+    <string name="ideas_probably_have">У вас уже, наверное, есть</string>
+    <string name="ideas_active_list">Активный список</string>
+    <string name="ideas_add_button">Добавить ингредиенты (%1$d)</string>
+    <string name="ideas_success">Все получилось.</string>
+
     <plurals name="items">
         <item quantity="one">%d товар</item>
         <item quantity="few">%d товара</item>

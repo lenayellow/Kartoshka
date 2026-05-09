@@ -107,6 +107,7 @@ import com.lena.kartoshka.data.ItemTag
 import com.lena.kartoshka.data.itemCategories
 import com.lena.kartoshka.data.sampleLoyaltyCards
 import com.lena.kartoshka.data.sort.SortRepository
+import com.lena.kartoshka.ui.screens.ideas.IdeasScreen
 import com.lena.kartoshka.ui.screens.newlist.NewListScreen
 import kotlinx.coroutines.launch
 
@@ -147,6 +148,7 @@ fun ListDetailScreen(
     val listMenuSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showListSettings by remember { mutableStateOf(false) }
     var listToEdit by remember { mutableStateOf<ShoppingList?>(null) }
+    var showIdeasScreen by remember { mutableStateOf(false) }
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showMoveItemPicker by remember { mutableStateOf(false) }
     var showPhotoDialog by remember { mutableStateOf(false) }
@@ -175,7 +177,8 @@ fun ListDetailScreen(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize()) {
+      Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -325,7 +328,6 @@ fun ListDetailScreen(
                 }
                 justAddedItem = newItem
             })
-            BottomNavBar()
         }
 
         if (showSortScreen) {
@@ -358,6 +360,17 @@ fun ListDetailScreen(
                 }
             )
         }
+
+        if (showIdeasScreen) {
+            IdeasScreen(initialListId = list.id, onClose = { showIdeasScreen = false })
+        }
+      }
+
+      BottomNavBar(
+          activeTab = if (showIdeasScreen) 1 else 0,
+          onIdeasClick = { showIdeasScreen = true },
+          onListsClick = { showIdeasScreen = false }
+      )
     }
 
     listToEdit?.let { editList ->
@@ -1224,7 +1237,11 @@ private fun AddItemRow(modifier: Modifier = Modifier, onAdd: (String) -> Unit = 
 }
 
 @Composable
-private fun BottomNavBar() {
+private fun BottomNavBar(
+    activeTab: Int = 0,
+    onIdeasClick: () -> Unit = {},
+    onListsClick: () -> Unit = {}
+) {
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     Column {
         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
@@ -1236,21 +1253,21 @@ private fun BottomNavBar() {
                 .padding(vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            NavItem(icon = Icons.Filled.Checklist,  label = stringResource(R.string.nav_lists),   selected = true)
-            NavItem(icon = Icons.Filled.Style,       label = stringResource(R.string.nav_ideas),   selected = false)
-            NavItem(icon = Icons.Filled.LocalOffer,  label = stringResource(R.string.nav_offers),  selected = false)
-            NavItem(icon = Icons.Filled.Person,      label = stringResource(R.string.nav_profile), selected = false)
+            NavItem(icon = Icons.Filled.Checklist,  label = stringResource(R.string.nav_lists),   selected = activeTab == 0, onClick = onListsClick)
+            NavItem(icon = Icons.Filled.Style,       label = stringResource(R.string.nav_ideas),   selected = activeTab == 1, onClick = onIdeasClick)
+            NavItem(icon = Icons.Filled.LocalOffer,  label = stringResource(R.string.nav_offers),  selected = activeTab == 2)
+            NavItem(icon = Icons.Filled.Person,      label = stringResource(R.string.nav_profile), selected = activeTab == 3)
         }
     }
 }
 
 @Composable
-private fun NavItem(icon: ImageVector, label: String, selected: Boolean) {
+private fun NavItem(icon: ImageVector, label: String, selected: Boolean, onClick: () -> Unit = {}) {
     val tint = if (selected) MaterialTheme.colorScheme.onSurface
                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
     Column(
         modifier = Modifier
-            .clickable(enabled = !selected, onClick = {})
+            .clickable(enabled = !selected, onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(3.dp)
