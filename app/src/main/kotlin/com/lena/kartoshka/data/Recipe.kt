@@ -1,5 +1,6 @@
 package com.lena.kartoshka.data
 
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.graphics.Color
 
 data class Ingredient(
@@ -15,10 +16,11 @@ data class Recipe(
     val tagline: String,
     val coverColor: Color,
     val likes: Int,
-    val ingredients: List<Ingredient>
+    val ingredients: List<Ingredient>,
+    val isOwn: Boolean = false
 )
 
-val sampleRecipes = listOf(
+val sampleRecipes = mutableStateListOf(
     Recipe(
         id = "r1",
         title = "Паста Карбонара",

@@ -82,11 +82,12 @@ fun IdeasScreen(initialListId: String = "", onClose: (() -> Unit)? = null) {
     var selectedRecipe by remember { mutableStateOf<Recipe?>(null) }
     var activeFilter by remember { mutableStateOf(IdeasFilter.ALL) }
     var showSuccessDialog by remember { mutableStateOf(false) }
+    var showCreateScreen by remember { mutableStateOf(false) }
 
     val filteredRecipes = when (activeFilter) {
-        IdeasFilter.ALL -> sampleRecipes
+        IdeasFilter.ALL -> sampleRecipes.toList()
         IdeasFilter.POPULAR -> sampleRecipes.sortedByDescending { it.likes }
-        IdeasFilter.MY -> sampleRecipes.take(2)
+        IdeasFilter.MY -> sampleRecipes.filter { it.isOwn }
     }
 
     Box(
@@ -135,7 +136,7 @@ fun IdeasScreen(initialListId: String = "", onClose: (() -> Unit)? = null) {
         }
 
         FloatingActionButton(
-            onClick = {},
+            onClick = { showCreateScreen = true },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .navigationBarsPadding()
@@ -143,6 +144,10 @@ fun IdeasScreen(initialListId: String = "", onClose: (() -> Unit)? = null) {
             containerColor = MaterialTheme.colorScheme.primary
         ) {
             Icon(imageVector = Icons.Filled.Add, contentDescription = null, tint = Color.White)
+        }
+
+        if (showCreateScreen) {
+            CreateRecipeScreen(onClose = { showCreateScreen = false })
         }
 
         selectedRecipe?.let { recipe ->

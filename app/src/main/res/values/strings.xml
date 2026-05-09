@@ -88,6 +88,16 @@
     <string name="ideas_active_list">Active list</string>
     <string name="ideas_add_button">Add ingredients (%1$d)</string>
     <string name="ideas_success">Done!</string>
+    <string name="create_recipe_save">SAVE</string>
+    <string name="create_recipe_name_hint">Template name</string>
+    <string name="create_recipe_description_hint">Description</string>
+    <string name="create_recipe_items">Items</string>
+    <string name="create_recipe_add_items">+ Add items</string>
+    <string name="create_recipe_optional_items">Optional items</string>
+    <string name="create_recipe_optional_desc">Add optional items you usually have in stock.</string>
+    <string name="create_recipe_add_optional">+ Add optional items</string>
+    <string name="create_recipe_add_link">Add link</string>
+    <string name="create_recipe_link_hint">https://</string>
 
     <plurals name="items">
         <item quantity="one">%d item</item>

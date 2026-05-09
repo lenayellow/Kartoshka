@@ -88,6 +88,16 @@
     <string name="ideas_active_list">Активный список</string>
     <string name="ideas_add_button">Добавить ингредиенты (%1$d)</string>
     <string name="ideas_success">Все получилось.</string>
+    <string name="create_recipe_save">СОХРАНИТЬ</string>
+    <string name="create_recipe_name_hint">Имя шаблона</string>
+    <string name="create_recipe_description_hint">Описание</string>
+    <string name="create_recipe_items">Товары</string>
+    <string name="create_recipe_add_items">+ Добавить товары</string>
+    <string name="create_recipe_optional_items">Необязательные товары</string>
+    <string name="create_recipe_optional_desc">Добавьте сюда необязательные товары, которые у вас обычно есть в запасе.</string>
+    <string name="create_recipe_add_optional">+ Добавить необязательные товары</string>
+    <string name="create_recipe_add_link">Добавить ссылку</string>
+    <string name="create_recipe_link_hint">https://</string>
 
     <plurals name="items">
         <item quantity="one">%d товар</item>
