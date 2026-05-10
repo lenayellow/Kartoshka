@@ -106,7 +106,6 @@ import com.lena.kartoshka.data.LoyaltyCard
 import com.lena.kartoshka.data.ShoppingList
 import com.lena.kartoshka.data.ItemTag
 import com.lena.kartoshka.data.itemCategories
-import com.lena.kartoshka.data.sampleLoyaltyCards
 import com.lena.kartoshka.data.sort.SortRepository
 import com.lena.kartoshka.ui.screens.ideas.IdeasScreen
 import com.lena.kartoshka.ui.screens.newlist.NewListScreen
@@ -194,6 +193,8 @@ fun ListDetailScreen(
     ) { uri ->
         if (uri != null) pendingItemCropUri = uri
     }
+
+    val loyaltyCards by appRepository.observeLoyaltyCards().collectAsState(initial = emptyList())
 
     val categoryOrderIds by sortRepository.observeCategoryOrder().collectAsState(initial = emptyList())
     val hiddenCategoryIds by sortRepository.observeHiddenCategories().collectAsState(initial = emptySet())
@@ -330,7 +331,7 @@ fun ListDetailScreen(
                     )
                 }
                 item(span = { GridItemSpan(3) }) {
-                    LoyaltyCardsSection(cards = sampleLoyaltyCards)
+                    LoyaltyCardsSection(cards = loyaltyCards)
                 }
                 if (recentlyUsed.isNotEmpty()) {
                     item(span = { GridItemSpan(3) }) {
@@ -1257,11 +1258,11 @@ private fun LoyaltyCardItem(card: LoyaltyCard) {
             .width(160.dp)
             .height(100.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(card.color),
+            .background(Color(card.color)),
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = card.storeName,
+            text = card.name,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White

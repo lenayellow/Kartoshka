@@ -67,6 +67,19 @@ class AppRepository(private val db: KartoshkaDatabase) {
         )
     }
 
+    // --- Loyalty cards ---
+
+    fun observeLoyaltyCards(): Flow<List<LoyaltyCard>> =
+        db.loyaltyCardDao().observeAll()
+
+    suspend fun insertLoyaltyCard(card: LoyaltyCard) {
+        db.loyaltyCardDao().insert(card)
+    }
+
+    suspend fun deleteLoyaltyCard(id: String) {
+        db.loyaltyCardDao().deleteById(id)
+    }
+
     // --- Seed sample data on first launch ---
 
     suspend fun seedIfEmpty() {
