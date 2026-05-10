@@ -72,6 +72,14 @@ dependencies {
     // ZXing — barcode rendering
     implementation("com.google.zxing:core:3.5.3")
 
+    // ML Kit — barcode scanning
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+
+    // CameraX
+    implementation("androidx.camera:camera-camera2:1.3.4")
+    implementation("androidx.camera:camera-lifecycle:1.3.4")
+    implementation("androidx.camera:camera-view:1.3.4")
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 }

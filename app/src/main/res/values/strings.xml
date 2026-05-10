@@ -119,6 +119,14 @@
     <string name="profile_delete_account_confirm">Are you sure you want to delete your account? This action cannot be undone.</string>
     <string name="crop_ok" translatable="false">OK</string>
     <string name="item_photo_section">Image</string>
+    <string name="scanner_hint">Point the camera at the barcode on your loyalty card</string>
+    <string name="scanner_manual_entry">Enter manually</string>
+    <string name="scanner_no_permission">Camera access is required to scan barcodes</string>
+    <string name="scanner_grant_permission">Grant access</string>
+    <string name="scanner_confirm_title">Card found</string>
+    <string name="scanner_barcode_number">Card number</string>
+    <string name="scanner_card_name">Card name (e.g. Coop, IKEA)</string>
+    <string name="scanner_save">Save card</string>
 
     <plurals name="items">
         <item quantity="one">%d item</item>

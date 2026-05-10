@@ -176,6 +176,7 @@ fun ListDetailScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var selectedLoyaltyCard by remember { mutableStateOf<LoyaltyCard?>(null) }
     val cardSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showCardScanner by remember { mutableStateOf(false) }
     var showSortScreen by remember { mutableStateOf(false) }
     var justAddedItem by remember { mutableStateOf<Item?>(null) }
     val addInfoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -335,7 +336,8 @@ fun ListDetailScreen(
                 item(span = { GridItemSpan(3) }) {
                     LoyaltyCardsSection(
                         cards = loyaltyCards,
-                        onCardClick = { selectedLoyaltyCard = it }
+                        onCardClick = { selectedLoyaltyCard = it },
+                        onAddClick = { showCardScanner = true }
                     )
                 }
                 if (recentlyUsed.isNotEmpty()) {
@@ -664,6 +666,16 @@ fun ListDetailScreen(
                 showListSettings = true
             })
         }
+    }
+
+    if (showCardScanner) {
+        CardScannerFlow(
+            onSaved = { card ->
+                scope.launch { appRepository.insertLoyaltyCard(card) }
+                showCardScanner = false
+            },
+            onDismiss = { showCardScanner = false }
+        )
     }
 
     selectedLoyaltyCard?.let { card ->
@@ -1238,7 +1250,8 @@ private fun RecentlyUsedSection(items: List<Item>, onItemClick: (Item) -> Unit) 
 @Composable
 private fun LoyaltyCardsSection(
     cards: List<LoyaltyCard>,
-    onCardClick: (LoyaltyCard) -> Unit = {}
+    onCardClick: (LoyaltyCard) -> Unit = {},
+    onAddClick: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -1269,7 +1282,7 @@ private fun LoyaltyCardsSection(
                 LoyaltyCardItem(card = card, onClick = { onCardClick(card) })
             }
             item {
-                AddLoyaltyCard()
+                AddLoyaltyCard(onClick = onAddClick)
             }
         }
     }
@@ -1296,12 +1309,13 @@ private fun LoyaltyCardItem(card: LoyaltyCard, onClick: () -> Unit = {}) {
 }
 
 @Composable
-private fun AddLoyaltyCard() {
+private fun AddLoyaltyCard(onClick: () -> Unit = {}) {
     val borderColor = Color.White.copy(alpha = 0.25f)
     Box(
         modifier = Modifier
             .width(160.dp)
             .height(100.dp)
+            .clickable { onClick() }
             .drawBehind {
                 drawRoundRect(
                     color = borderColor,

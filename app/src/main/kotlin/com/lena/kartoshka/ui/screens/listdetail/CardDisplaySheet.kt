@@ -141,7 +141,7 @@ fun CardDisplaySheet(
     }
 }
 
-private fun renderBarcode(value: String, formatOrdinal: Int): ImageBitmap? =
+internal fun renderBarcode(value: String, formatOrdinal: Int): ImageBitmap? =
     runCatching {
         val format = BarcodeFormat.values()[formatOrdinal]
         val isQr = format == BarcodeFormat.QR_CODE
