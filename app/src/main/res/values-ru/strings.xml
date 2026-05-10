@@ -124,7 +124,7 @@
     <string name="scanner_grant_permission">Разрешить доступ</string>
     <string name="scanner_confirm_title">Карта найдена</string>
     <string name="scanner_barcode_number">Номер карты</string>
-    <string name="scanner_card_name">Название карты (например, Coop, ИКЕА)</string>
+    <string name="scanner_card_name">Название карты (например, ВкусВилл, Лента, Перекрёсток)</string>
     <string name="scanner_save">Сохранить карту</string>
 
     <plurals name="items">

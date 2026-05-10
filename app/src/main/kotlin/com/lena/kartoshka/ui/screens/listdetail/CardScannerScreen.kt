@@ -13,6 +13,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -55,6 +56,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -260,20 +262,22 @@ private fun CameraScanner(
                 )
             }
 
-            // "Scanning…" hint inside viewfinder area
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.Center)
-                    .padding(horizontal = 64.dp)
-                    .padding(top = 80.dp),
-                contentAlignment = Alignment.Center
-            ) {
+            // Hint text positioned just below the viewfinder frame
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                val density = LocalDensity.current
+                val sw = constraints.maxWidth.toFloat()
+                val sh = constraints.maxHeight.toFloat()
+                val frameBottomPx = sh / 2f + sw * 0.4125f / 2f - sh * 0.05f
+                val hintTopPadding = with(density) { frameBottomPx.toDp() } + 14.dp
                 Text(
                     text = stringResource(R.string.scanner_hint),
                     color = Color.White.copy(alpha = 0.8f),
                     fontSize = 13.sp,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = hintTopPadding)
+                        .padding(horizontal = 40.dp)
                 )
             }
         } else {
@@ -397,7 +401,7 @@ private fun ScanConfirmScreen(
             OutlinedTextField(
                 value = barcodeValue,
                 onValueChange = { barcodeValue = it },
-                label = { Text(stringResource(R.string.scanner_barcode_number)) },
+                placeholder = { Text(stringResource(R.string.scanner_barcode_number)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -415,7 +419,7 @@ private fun ScanConfirmScreen(
         OutlinedTextField(
             value = cardName,
             onValueChange = { cardName = it },
-            label = { Text(stringResource(R.string.scanner_card_name)) },
+            placeholder = { Text(stringResource(R.string.scanner_card_name)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words)

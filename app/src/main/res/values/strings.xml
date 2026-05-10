@@ -125,7 +125,7 @@
     <string name="scanner_grant_permission">Grant access</string>
     <string name="scanner_confirm_title">Card found</string>
     <string name="scanner_barcode_number">Card number</string>
-    <string name="scanner_card_name">Card name (e.g. Coop, IKEA)</string>
+    <string name="scanner_card_name">Card name (e.g. VkusVill, Lenta, Perekrestok)</string>
     <string name="scanner_save">Save card</string>
 
     <plurals name="items">

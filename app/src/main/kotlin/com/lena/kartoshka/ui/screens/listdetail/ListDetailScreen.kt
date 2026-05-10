@@ -374,6 +374,7 @@ fun ListDetailScreen(
                 }
             }
 
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
             AddItemRow(onAdd = { name ->
                 val newItem = Item(
                     id = "added_${name}_${System.currentTimeMillis()}",
@@ -1433,7 +1434,7 @@ private fun BottomNavBar(
 ) {
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     Column {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
