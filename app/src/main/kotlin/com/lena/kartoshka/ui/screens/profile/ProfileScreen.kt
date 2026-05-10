@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -122,6 +123,7 @@ fun ProfileScreen(
     var showListPicker by remember { mutableStateOf(false) }
     var showShareSheet by remember { mutableStateOf(false) }
     var showDeleteAccountConfirm by remember { mutableStateOf(false) }
+    var pendingCropUri by remember { mutableStateOf<Uri?>(null) }
 
     var avatarBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(avatarPath) {
@@ -135,17 +137,7 @@ fun ProfileScreen(
     val imageLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
-        if (uri != null) {
-            scope.launch(Dispatchers.IO) {
-                runCatching {
-                    context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                        val file = File(context.filesDir, "avatar.jpg")
-                        file.outputStream().use { out -> inputStream.copyTo(out) }
-                        withContext(Dispatchers.Main) { onAvatarChange(file.absolutePath) }
-                    }
-                }
-            }
-        }
+        if (uri != null) pendingCropUri = uri
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -455,6 +447,28 @@ fun ProfileScreen(
                     }
                 },
                 containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+            )
+        }
+
+        // Photo crop overlay
+        pendingCropUri?.let { uri ->
+            ImageCropScreen(
+                imageUri = uri,
+                onConfirm = { croppedBitmap ->
+                    scope.launch(Dispatchers.IO) {
+                        runCatching {
+                            val file = File(context.filesDir, "avatar.jpg")
+                            file.outputStream().use { out ->
+                                croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+                            }
+                            withContext(Dispatchers.Main) {
+                                pendingCropUri = null
+                                onAvatarChange(file.absolutePath)
+                            }
+                        }
+                    }
+                },
+                onDismiss = { pendingCropUri = null }
             )
         }
     }
