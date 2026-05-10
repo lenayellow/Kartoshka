@@ -22,6 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.lena.kartoshka.data.AppRepository
 import com.lena.kartoshka.data.LastUsedRepository
+import com.lena.kartoshka.data.UserPrefsRepository
 import com.lena.kartoshka.data.db.KartoshkaDatabase
 import com.lena.kartoshka.data.sort.LocalSortRepository
 import com.lena.kartoshka.ui.screens.listdetail.ListDetailScreen
@@ -36,12 +37,15 @@ class MainActivity : ComponentActivity() {
     private val sortRepository by lazy { LocalSortRepository(applicationContext) }
     private val lastUsedRepository by lazy { LastUsedRepository(applicationContext) }
     private val appRepository by lazy { AppRepository(KartoshkaDatabase.get(applicationContext)) }
+    private val userPrefsRepository by lazy { UserPrefsRepository(applicationContext) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            KartoshkaTheme {
+            val isDarkTheme by userPrefsRepository.isDark.collectAsState()
+            val avatarPath by userPrefsRepository.avatarPath.collectAsState()
+            KartoshkaTheme(darkTheme = isDarkTheme) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val navController = rememberNavController()
                     val scope = rememberCoroutineScope()
@@ -124,7 +128,11 @@ class MainActivity : ComponentActivity() {
                                 allLists = lists,
                                 sortRepository = sortRepository,
                                 appRepository = appRepository,
-                                onBack = { navController.popBackStack() }
+                                onBack = { navController.popBackStack() },
+                                isDarkTheme = isDarkTheme,
+                                onThemeChange = { userPrefsRepository.setDark(it) },
+                                avatarPath = avatarPath,
+                                onAvatarChange = { userPrefsRepository.saveAvatarPath(it) }
                             )
                         }
                     }

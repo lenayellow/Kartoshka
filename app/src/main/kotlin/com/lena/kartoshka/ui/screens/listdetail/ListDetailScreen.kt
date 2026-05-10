@@ -110,6 +110,7 @@ import com.lena.kartoshka.data.sampleLoyaltyCards
 import com.lena.kartoshka.data.sort.SortRepository
 import com.lena.kartoshka.ui.screens.ideas.IdeasScreen
 import com.lena.kartoshka.ui.screens.newlist.NewListScreen
+import com.lena.kartoshka.ui.screens.profile.ProfileScreen
 import kotlinx.coroutines.launch
 
 private val ItemCardColor = Color(0xFFE07870)
@@ -133,7 +134,11 @@ fun ListDetailScreen(
     allLists: List<ShoppingList>,
     sortRepository: SortRepository,
     appRepository: AppRepository,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    isDarkTheme: Boolean = true,
+    onThemeChange: (Boolean) -> Unit = {},
+    avatarPath: String? = null,
+    onAvatarChange: (String?) -> Unit = {}
 ) {
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val scope = rememberCoroutineScope()
@@ -163,6 +168,7 @@ fun ListDetailScreen(
     var showListSettings by remember { mutableStateOf(false) }
     var listToEdit by remember { mutableStateOf<ShoppingList?>(null) }
     var showIdeasScreen by remember { mutableStateOf(false) }
+    var showProfileScreen by remember { mutableStateOf(false) }
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showMoveItemPicker by remember { mutableStateOf(false) }
     var showPhotoDialog by remember { mutableStateOf(false) }
@@ -404,12 +410,35 @@ fun ListDetailScreen(
                 onClose = { showIdeasScreen = false }
             )
         }
+
+        if (showProfileScreen) {
+            ProfileScreen(
+                allLists = allLists,
+                currentListId = list.id,
+                sortRepository = sortRepository,
+                appRepository = appRepository,
+                isDarkTheme = isDarkTheme,
+                onThemeChange = onThemeChange,
+                avatarPath = avatarPath,
+                onAvatarChange = onAvatarChange,
+                onClose = { showProfileScreen = false },
+                onDeleteCurrentList = {
+                    scope.launch { appRepository.deleteList(list.id) }
+                    onBack()
+                }
+            )
+        }
       }
 
       BottomNavBar(
-          activeTab = if (showIdeasScreen) 1 else 0,
-          onIdeasClick = { showIdeasScreen = true },
-          onListsClick = { showIdeasScreen = false }
+          activeTab = when {
+              showIdeasScreen -> 1
+              showProfileScreen -> 2
+              else -> 0
+          },
+          onIdeasClick = { showIdeasScreen = true; showProfileScreen = false },
+          onListsClick = { showIdeasScreen = false; showProfileScreen = false },
+          onProfileClick = { showProfileScreen = true; showIdeasScreen = false }
       )
     }
 
@@ -1278,7 +1307,8 @@ private fun AddItemRow(modifier: Modifier = Modifier, onAdd: (String) -> Unit = 
 private fun BottomNavBar(
     activeTab: Int = 0,
     onIdeasClick: () -> Unit = {},
-    onListsClick: () -> Unit = {}
+    onListsClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     Column {
@@ -1291,9 +1321,9 @@ private fun BottomNavBar(
                 .padding(vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            NavItem(icon = Icons.Filled.Checklist,  label = stringResource(R.string.nav_lists),   selected = activeTab == 0, onClick = onListsClick)
-            NavItem(icon = Icons.Filled.Style,       label = stringResource(R.string.nav_ideas),   selected = activeTab == 1, onClick = onIdeasClick)
-            NavItem(icon = Icons.Filled.Person,      label = stringResource(R.string.nav_profile), selected = activeTab == 3)
+            NavItem(icon = Icons.Filled.Checklist, label = stringResource(R.string.nav_lists),   selected = activeTab == 0, onClick = onListsClick)
+            NavItem(icon = Icons.Filled.Style,     label = stringResource(R.string.nav_ideas),   selected = activeTab == 1, onClick = onIdeasClick)
+            NavItem(icon = Icons.Filled.Person,    label = stringResource(R.string.nav_profile), selected = activeTab == 2, onClick = onProfileClick)
         }
     }
 }
