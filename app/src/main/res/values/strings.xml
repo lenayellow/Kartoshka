@@ -108,6 +108,11 @@
     <string name="profile_theme_dark">Dark</string>
     <string name="profile_theme_light">Light</string>
     <string name="profile_rate">Rate us in RuStore</string>
+    <string name="profile_support_dev">Support the developer</string>
+    <string name="profile_support_dev_subtitle">SBP transfer · any amount</string>
+    <string name="profile_support_dev_hint">Thank you, it means a lot 🙏</string>
+    <string name="profile_support_dev_copy">Copy number</string>
+    <string name="profile_support_dev_phone" translatable="false">+79046353225</string>
     <string name="profile_account">Profile settings</string>
     <string name="profile_change_password">Change password</string>
     <string name="profile_change_email">Change email</string>
@@ -125,7 +130,7 @@
     <string name="scanner_grant_permission">Grant access</string>
     <string name="scanner_confirm_title">Card found</string>
     <string name="scanner_barcode_number">Card number</string>
-    <string name="scanner_card_name">Card name (e.g. VkusVill, Lenta, Perekrestok)</string>
+    <string name="scanner_card_name">Card name (e.g. VkusVill, Lenta)</string>
     <string name="scanner_save">Save card</string>
 
     <plurals name="items">

@@ -117,6 +117,10 @@
     <string name="profile_pick_list">Выберите список</string>
     <string name="profile_share_copy">Скопировать ссылку</string>
     <string name="profile_delete_account_confirm">Вы уверены, что хотите удалить учётную запись? Это действие нельзя отменить.</string>
+    <string name="profile_support_dev">Поддержать разработчика</string>
+    <string name="profile_support_dev_subtitle">Перевод по СБП · любая сумма</string>
+    <string name="profile_support_dev_hint">Спасибо, это очень приятно 🙏</string>
+    <string name="profile_support_dev_copy">Скопировать номер</string>
     <string name="item_photo_section">Изображение</string>
     <string name="scanner_hint">Наведите камеру на штрих-код карты лояльности</string>
     <string name="scanner_manual_entry">Ввести вручную</string>
@@ -124,7 +128,7 @@
     <string name="scanner_grant_permission">Разрешить доступ</string>
     <string name="scanner_confirm_title">Карта найдена</string>
     <string name="scanner_barcode_number">Номер карты</string>
-    <string name="scanner_card_name">Название карты (например, ВкусВилл, Лента, Перекрёсток)</string>
+    <string name="scanner_card_name">Название карты (например, ВкусВилл, Лента)</string>
     <string name="scanner_save">Сохранить карту</string>
 
     <plurals name="items">

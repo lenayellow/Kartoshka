@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.MultiFormatWriter
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -123,6 +125,7 @@ fun ProfileScreen(
     var showListPicker by remember { mutableStateOf(false) }
     var showShareSheet by remember { mutableStateOf(false) }
     var showDeleteAccountConfirm by remember { mutableStateOf(false) }
+    var showSupportSheet by remember { mutableStateOf(false) }
     var pendingCropUri by remember { mutableStateOf<Uri?>(null) }
 
     var avatarBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
@@ -313,6 +316,14 @@ fun ProfileScreen(
                                 }
                                 runCatching { context.startActivity(intent) }
                             }
+                        )
+
+                        ProfileRowDivider()
+
+                        ProfileSettingsRow(
+                            icon = Icons.Filled.Favorite,
+                            title = stringResource(R.string.profile_support_dev),
+                            onClick = { showSupportSheet = true }
                         )
                     }
                 }
@@ -594,6 +605,105 @@ fun ProfileScreen(
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+    }
+
+    if (showSupportSheet) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        val phone = stringResource(R.string.profile_support_dev_phone)
+
+        var qrBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+        LaunchedEffect(Unit) {
+            qrBitmap = withContext(Dispatchers.IO) {
+                runCatching {
+                    val size = 512
+                    val bitMatrix = MultiFormatWriter().encode(phone, BarcodeFormat.QR_CODE, size, size)
+                    val pixels = IntArray(size * size) { i ->
+                        if (bitMatrix[i % size, i / size]) android.graphics.Color.BLACK
+                        else android.graphics.Color.WHITE
+                    }
+                    Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888).asImageBitmap()
+                }.getOrNull()
+            }
+        }
+
+        ModalBottomSheet(
+            onDismissRequest = { showSupportSheet = false },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = navBarPadding + 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.profile_support_dev),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Text(
+                    text = stringResource(R.string.profile_support_dev_subtitle),
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                qrBitmap?.let { bmp ->
+                    Surface(
+                        color = Color.White,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.size(220.dp)
+                    ) {
+                        Image(
+                            bitmap = bmp,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp)
+                        )
+                    }
+                }
+
+                Text(
+                    text = phone,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 1.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                OutlinedButton(
+                    onClick = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        clipboard.setPrimaryClip(ClipData.newPlainText("sbp_phone", phone))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.ContentCopy,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.profile_support_dev_copy))
+                }
+
+                Text(
+                    text = stringResource(R.string.profile_support_dev_hint),
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }
