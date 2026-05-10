@@ -1310,7 +1310,8 @@ private fun LoyaltyCardItem(card: LoyaltyCard, onClick: () -> Unit = {}) {
 
 @Composable
 private fun AddLoyaltyCard(onClick: () -> Unit = {}) {
-    val borderColor = Color.White.copy(alpha = 0.25f)
+    val borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
+    val textColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
     Box(
         modifier = Modifier
             .width(160.dp)
@@ -1334,7 +1335,7 @@ private fun AddLoyaltyCard(onClick: () -> Unit = {}) {
             text = stringResource(R.string.add_card),
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = Color.White.copy(alpha = 0.5f)
+            color = textColor
         )
     }
 }

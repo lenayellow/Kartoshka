@@ -332,7 +332,7 @@ private fun SuggestionsSection(suggestions: List<Suggestion>, onSuggestionClick:
             text = stringResource(R.string.suggestions_title),
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = Color.White.copy(alpha = 0.5f)
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
         )
         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             items(suggestions, key = { it.id }) { suggestion ->
@@ -379,7 +379,8 @@ private fun SuggestionCard(suggestion: Suggestion, onClick: () -> Unit = {}) {
 
 @Composable
 private fun NewListCard(onClick: () -> Unit) {
-    val borderColor = Color.White.copy(alpha = 0.25f)
+    val borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
+    val textColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -401,7 +402,7 @@ private fun NewListCard(onClick: () -> Unit) {
             text = stringResource(R.string.new_list),
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium,
-            color = Color.White.copy(alpha = 0.5f)
+            color = textColor
         )
     }
 }
