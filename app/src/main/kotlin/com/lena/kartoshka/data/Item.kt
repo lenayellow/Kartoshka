@@ -5,5 +5,6 @@ data class Item(
     val name: String,
     val tags: Set<ItemTag> = emptySet(),
     val note: String = "",
-    val categoryId: String? = null
+    val categoryId: String? = null,
+    val imagePath: String? = null
 )

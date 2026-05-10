@@ -24,14 +24,16 @@ data class ItemEntity(
     val name: String,
     val tags: String = "",
     val note: String = "",
-    @ColumnInfo(name = "category_id") val categoryId: String? = null
+    @ColumnInfo(name = "category_id") val categoryId: String? = null,
+    @ColumnInfo(name = "image_path") val imagePath: String? = null
 ) {
     fun toItem() = Item(
         id = id,
         name = name,
         tags = tags.toTagSet(),
         note = note,
-        categoryId = categoryId
+        categoryId = categoryId,
+        imagePath = imagePath
     )
 }
 
@@ -41,7 +43,8 @@ fun Item.toEntity(listId: String) = ItemEntity(
     name = name,
     tags = tags.joinToString(",") { it.name },
     note = note,
-    categoryId = categoryId
+    categoryId = categoryId,
+    imagePath = imagePath
 )
 
 private fun String.toTagSet(): Set<ItemTag> =

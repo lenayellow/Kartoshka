@@ -110,8 +110,22 @@ import com.lena.kartoshka.data.sampleLoyaltyCards
 import com.lena.kartoshka.data.sort.SortRepository
 import com.lena.kartoshka.ui.screens.ideas.IdeasScreen
 import com.lena.kartoshka.ui.screens.newlist.NewListScreen
+import com.lena.kartoshka.ui.screens.profile.ImageCropScreen
 import com.lena.kartoshka.ui.screens.profile.ProfileScreen
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import java.io.File
 
 private val ItemCardColor = Color(0xFFE07870)
 private val RecentlyUsedCardColor = Color(0xFF4A8579)
@@ -140,6 +154,7 @@ fun ListDetailScreen(
     avatarPath: String? = null,
     onAvatarChange: (String?) -> Unit = {}
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val scope = rememberCoroutineScope()
 
@@ -171,7 +186,14 @@ fun ListDetailScreen(
     var showProfileScreen by remember { mutableStateOf(false) }
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showMoveItemPicker by remember { mutableStateOf(false) }
-    var showPhotoDialog by remember { mutableStateOf(false) }
+    var photoTargetItem by remember { mutableStateOf<Item?>(null) }
+    var pendingItemCropUri by remember { mutableStateOf<Uri?>(null) }
+
+    val itemPhotoLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) pendingItemCropUri = uri
+    }
 
     val categoryOrderIds by sortRepository.observeCategoryOrder().collectAsState(initial = emptyList())
     val hiddenCategoryIds by sortRepository.observeHiddenCategories().collectAsState(initial = emptySet())
@@ -452,7 +474,24 @@ fun ListDetailScreen(
                 item = selectedItem!!,
                 onChangeCategoryClick = { showCategoryPicker = true },
                 onMoveItemClick = { showMoveItemPicker = true },
-                onAddPhotoClick = { selectedItem = null; showPhotoDialog = true },
+                onAddPhotoClick = {
+                    photoTargetItem = selectedItem
+                    selectedItem = null
+                    itemPhotoLauncher.launch("image/*")
+                },
+                onDeletePhoto = {
+                    val current = selectedItem
+                    if (current != null) {
+                        current.imagePath?.let { File(it).delete() }
+                        val updated = current.copy(imagePath = null)
+                        val aIdx = activeItems.indexOfFirst { it.id == current.id }
+                        if (aIdx >= 0) activeItems[aIdx] = updated
+                        val rIdx = recentlyUsed.indexOfFirst { it.id == current.id }
+                        if (rIdx >= 0) recentlyUsed[rIdx] = updated
+                        selectedItem = updated
+                        scope.launch { appRepository.updateItem(updated, list.id) }
+                    }
+                },
                 onDeleteItem = {
                     val current = selectedItem
                     if (current != null) {
@@ -531,52 +570,35 @@ fun ListDetailScreen(
         )
     }
 
-    if (showPhotoDialog) {
-        Dialog(onDismissRequest = { showPhotoDialog = false }) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.add_photo_title),
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = stringResource(R.string.add_photo_description),
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        TextButton(onClick = { showPhotoDialog = false }) {
-                            Text(
-                                text = stringResource(R.string.add_photo_from_album),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+    pendingItemCropUri?.let { uri ->
+        ImageCropScreen(
+            imageUri = uri,
+            aspectRatio = 4f / 3f,
+            onConfirm = { croppedBitmap ->
+                scope.launch(Dispatchers.IO) {
+                    photoTargetItem?.let { item ->
+                        val file = File(context.filesDir, "item_${item.id}.jpg")
+                        file.outputStream().use { out ->
+                            croppedBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
                         }
-                        TextButton(onClick = { showPhotoDialog = false }) {
-                            Text(
-                                text = stringResource(R.string.add_photo_take),
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                        val updated = item.copy(imagePath = file.absolutePath)
+                        val aIdx = activeItems.indexOfFirst { it.id == item.id }
+                        withContext(Dispatchers.Main) {
+                            if (aIdx >= 0) activeItems[aIdx] = updated
+                            val rIdx = recentlyUsed.indexOfFirst { it.id == item.id }
+                            if (rIdx >= 0) recentlyUsed[rIdx] = updated
+                            pendingItemCropUri = null
+                            photoTargetItem = null
                         }
+                        appRepository.updateItem(updated, list.id)
                     }
                 }
+            },
+            onDismiss = {
+                pendingItemCropUri = null
+                photoTargetItem = null
             }
-            } // Box
-        }
+        )
     }
 
     if (justAddedItem != null) {
@@ -678,6 +700,16 @@ private fun ItemCard(
                 }
             }
         }
+        if (item.imagePath != null) {
+            Icon(
+                imageVector = Icons.Filled.CameraAlt,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.85f),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(14.dp)
+            )
+        }
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -709,10 +741,19 @@ private fun ItemCard(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onChangeCategoryClick: () -> Unit = {}, onMoveItemClick: () -> Unit = {}, onAddPhotoClick: () -> Unit = {}, onDeleteItem: () -> Unit = {}, onDone: (note: String) -> Unit) {
+private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onChangeCategoryClick: () -> Unit = {}, onMoveItemClick: () -> Unit = {}, onAddPhotoClick: () -> Unit = {}, onDeletePhoto: () -> Unit = {}, onDeleteItem: () -> Unit = {}, onDone: (note: String) -> Unit) {
     var note by remember(item.id) { mutableStateOf(item.note) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     val noteHint = stringResource(R.string.item_note_hint)
+
+    var itemPhotoBitmap by remember(item.imagePath) { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(item.imagePath) {
+        itemPhotoBitmap = withContext(Dispatchers.IO) {
+            item.imagePath?.let { path ->
+                runCatching { BitmapFactory.decodeFile(path)?.asImageBitmap() }.getOrNull()
+            }
+        }
+    }
 
     Box(modifier = Modifier.fillMaxWidth()) {
     Column(
@@ -771,6 +812,45 @@ private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onC
                     inner()
                 }
             )
+        }
+
+        // Photo section
+        itemPhotoBitmap?.let { bmp ->
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = stringResource(R.string.item_photo_section),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                ) {
+                    Image(
+                        bitmap = bmp,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentScale = ContentScale.FillWidth
+                    )
+                    IconButton(
+                        onClick = onDeletePhoto,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                            .size(36.dp)
+                            .background(Color.Black.copy(alpha = 0.45f), CircleShape)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Delete,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
         }
 
         Text(
