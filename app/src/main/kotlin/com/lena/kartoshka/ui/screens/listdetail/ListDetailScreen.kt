@@ -1410,14 +1410,14 @@ private fun AddItemRow(modifier: Modifier = Modifier, onAdd: (String) -> Unit = 
         Box(
             modifier = Modifier
                 .size(52.dp)
-                .background(ItemCardColor, CircleShape)
+                .background(MaterialTheme.colorScheme.primary, CircleShape)
                 .clickable { submit() },
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Filled.Add,
                 contentDescription = null,
-                tint = Color.White,
+                tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(28.dp)
             )
         }
@@ -1437,7 +1437,7 @@ private fun BottomNavBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                 .padding(bottom = navBarPadding)
                 .padding(vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
