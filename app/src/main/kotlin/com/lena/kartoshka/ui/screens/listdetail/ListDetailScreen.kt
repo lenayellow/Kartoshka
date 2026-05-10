@@ -174,6 +174,8 @@ fun ListDetailScreen(
 
     var selectedItem by remember { mutableStateOf<Item?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var selectedLoyaltyCard by remember { mutableStateOf<LoyaltyCard?>(null) }
+    val cardSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var showSortScreen by remember { mutableStateOf(false) }
     var justAddedItem by remember { mutableStateOf<Item?>(null) }
     val addInfoSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -331,7 +333,10 @@ fun ListDetailScreen(
                     )
                 }
                 item(span = { GridItemSpan(3) }) {
-                    LoyaltyCardsSection(cards = loyaltyCards)
+                    LoyaltyCardsSection(
+                        cards = loyaltyCards,
+                        onCardClick = { selectedLoyaltyCard = it }
+                    )
                 }
                 if (recentlyUsed.isNotEmpty()) {
                     item(span = { GridItemSpan(3) }) {
@@ -658,6 +663,22 @@ fun ListDetailScreen(
                 showListMenu = false
                 showListSettings = true
             })
+        }
+    }
+
+    selectedLoyaltyCard?.let { card ->
+        ModalBottomSheet(
+            onDismissRequest = { selectedLoyaltyCard = null },
+            sheetState = cardSheetState,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ) {
+            CardDisplaySheet(
+                card = card,
+                onDelete = {
+                    scope.launch { appRepository.deleteLoyaltyCard(card.id) }
+                    selectedLoyaltyCard = null
+                }
+            )
         }
     }
 }
@@ -1215,7 +1236,10 @@ private fun RecentlyUsedSection(items: List<Item>, onItemClick: (Item) -> Unit) 
 }
 
 @Composable
-private fun LoyaltyCardsSection(cards: List<LoyaltyCard>) {
+private fun LoyaltyCardsSection(
+    cards: List<LoyaltyCard>,
+    onCardClick: (LoyaltyCard) -> Unit = {}
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1242,7 +1266,7 @@ private fun LoyaltyCardsSection(cards: List<LoyaltyCard>) {
         }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             lazyItems(cards, key = { it.id }) { card ->
-                LoyaltyCardItem(card = card)
+                LoyaltyCardItem(card = card, onClick = { onCardClick(card) })
             }
             item {
                 AddLoyaltyCard()
@@ -1252,12 +1276,13 @@ private fun LoyaltyCardsSection(cards: List<LoyaltyCard>) {
 }
 
 @Composable
-private fun LoyaltyCardItem(card: LoyaltyCard) {
+private fun LoyaltyCardItem(card: LoyaltyCard, onClick: () -> Unit = {}) {
     Box(
         modifier = Modifier
             .width(160.dp)
             .height(100.dp)
             .clip(RoundedCornerShape(16.dp))
+            .clickable { onClick() }
             .background(Color(card.color)),
         contentAlignment = Alignment.Center
     ) {

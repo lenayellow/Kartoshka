@@ -69,6 +69,9 @@ dependencies {
     // Drag-and-drop reordering
     implementation(libs.reorderable)
 
+    // ZXing — barcode rendering
+    implementation("com.google.zxing:core:3.5.3")
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 }
