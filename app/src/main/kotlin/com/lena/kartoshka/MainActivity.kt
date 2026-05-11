@@ -22,8 +22,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.lena.kartoshka.data.AppRepository
 import com.lena.kartoshka.data.LastUsedRepository
+import com.lena.kartoshka.data.TokenStore
 import com.lena.kartoshka.data.UserPrefsRepository
 import com.lena.kartoshka.data.db.KartoshkaDatabase
+import com.lena.kartoshka.network.ApiClient
 import com.lena.kartoshka.data.sort.LocalSortRepository
 import com.lena.kartoshka.ui.screens.listdetail.ListDetailScreen
 import com.lena.kartoshka.ui.screens.mylists.MyListsScreen
@@ -38,9 +40,13 @@ class MainActivity : ComponentActivity() {
     private val lastUsedRepository by lazy { LastUsedRepository(applicationContext) }
     private val appRepository by lazy { AppRepository(KartoshkaDatabase.get(applicationContext)) }
     private val userPrefsRepository by lazy { UserPrefsRepository(applicationContext) }
+    private val tokenStore by lazy {
+        TokenStore(applicationContext).also { ApiClient.init(it) }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        tokenStore // triggers lazy init → ApiClient.init()
         enableEdgeToEdge()
         setContent {
             val isDarkTheme by userPrefsRepository.isDark.collectAsState()
