@@ -151,7 +151,8 @@ fun ListDetailScreen(
     isDarkTheme: Boolean = true,
     onThemeChange: (Boolean) -> Unit = {},
     avatarPath: String? = null,
-    onAvatarChange: (String?) -> Unit = {}
+    onAvatarChange: (String?) -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -455,7 +456,8 @@ fun ListDetailScreen(
                 onDeleteCurrentList = {
                     scope.launch { appRepository.deleteList(list.id) }
                     onBack()
-                }
+                },
+                onLogout = onLogout
             )
         }
       }

@@ -20,6 +20,10 @@ data class RefreshRequest(
     val refresh_token: String
 )
 
+data class LogoutRequest(
+    val refresh_token: String
+)
+
 data class RegisterResponse(
     val message: String,
     val user_id: String

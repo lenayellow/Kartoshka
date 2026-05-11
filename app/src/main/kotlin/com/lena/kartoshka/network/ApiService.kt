@@ -15,7 +15,7 @@ interface ApiService {
     suspend fun refresh(@Body body: RefreshRequest): TokenPair
 
     @POST("auth/logout")
-    suspend fun logout()
+    suspend fun logout(@Body body: LogoutRequest)
 
     // User
     @GET("users/me")

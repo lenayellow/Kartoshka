@@ -113,7 +113,8 @@ fun ProfileScreen(
     avatarPath: String?,
     onAvatarChange: (String?) -> Unit,
     onClose: () -> Unit,
-    onDeleteCurrentList: () -> Unit
+    onDeleteCurrentList: () -> Unit,
+    onLogout: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -375,7 +376,7 @@ fun ProfileScreen(
 
             // Logout button
             OutlinedButton(
-                onClick = {},
+                onClick = { onLogout() },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)

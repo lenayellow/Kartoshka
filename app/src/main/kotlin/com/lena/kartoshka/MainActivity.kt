@@ -27,6 +27,7 @@ import com.lena.kartoshka.data.TokenStore
 import com.lena.kartoshka.data.UserPrefsRepository
 import com.lena.kartoshka.data.db.KartoshkaDatabase
 import com.lena.kartoshka.network.ApiClient
+import com.lena.kartoshka.network.LogoutRequest
 import com.lena.kartoshka.data.sort.LocalSortRepository
 import com.lena.kartoshka.ui.screens.auth.AuthScreen
 import com.lena.kartoshka.ui.screens.auth.AuthViewModel
@@ -163,7 +164,19 @@ class MainActivity : ComponentActivity() {
                                 isDarkTheme = isDarkTheme,
                                 onThemeChange = { userPrefsRepository.setDark(it) },
                                 avatarPath = avatarPath,
-                                onAvatarChange = { userPrefsRepository.saveAvatarPath(it) }
+                                onAvatarChange = { userPrefsRepository.saveAvatarPath(it) },
+                                onLogout = {
+                                    scope.launch {
+                                        runCatching {
+                                            val rt = tokenStore.refreshToken
+                                            if (rt != null) ApiClient.api.logout(LogoutRequest(rt))
+                                        }
+                                        tokenStore.clear()
+                                        navController.navigate("auth") {
+                                            popUpTo(0) { inclusive = true }
+                                        }
+                                    }
+                                }
                             )
                         }
                     }
