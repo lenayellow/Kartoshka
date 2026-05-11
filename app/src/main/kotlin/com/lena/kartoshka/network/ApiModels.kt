@@ -32,6 +32,36 @@ data class UserResponse(
     val avatar_url: String?
 )
 
+data class CreateListRequest(
+    val title: String,
+    val color_value: Long,
+    val position: Int
+)
+
+data class UpdateListRequest(
+    val title: String,
+    val color_value: Long,
+    val position: Int = 0,
+    val category_order: String = "",
+    val hidden_categories: String = ""
+)
+
+data class CreateItemRequest(
+    val name: String,
+    val tags: String = "",
+    val note: String = "",
+    val category_id: String = "",
+    val sort_index: Int = 0
+)
+
+data class UpdateItemRequest(
+    val name: String,
+    val tags: String = "",
+    val note: String = "",
+    val category_id: String = "",
+    val sort_index: Int = 0
+)
+
 data class ApiList(
     val list_id: String,
     val title: String,

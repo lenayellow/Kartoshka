@@ -13,6 +13,9 @@ interface ItemDao {
     @Query("SELECT * FROM items WHERE list_id = :listId ORDER BY rowid ASC")
     fun observeByListId(listId: String): Flow<List<ItemEntity>>
 
+    @Query("SELECT * FROM items WHERE id = :id LIMIT 1")
+    suspend fun getById(id: String): ItemEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(item: ItemEntity)
 

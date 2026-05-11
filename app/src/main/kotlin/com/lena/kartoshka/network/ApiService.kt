@@ -25,6 +25,29 @@ interface ApiService {
     @GET("lists")
     suspend fun getLists(): List<ApiList>
 
+    @POST("lists")
+    suspend fun createList(@Body body: CreateListRequest): ApiList
+
+    @PUT("lists/{list_id}")
+    suspend fun updateList(@Path("list_id") listId: String, @Body body: UpdateListRequest): ApiList
+
+    @DELETE("lists/{list_id}")
+    suspend fun deleteList(@Path("list_id") listId: String)
+
+    // Items
     @GET("lists/{list_id}/items")
     suspend fun getItems(@Path("list_id") listId: String): List<ApiItem>
+
+    @POST("lists/{list_id}/items")
+    suspend fun createItem(@Path("list_id") listId: String, @Body body: CreateItemRequest): ApiItem
+
+    @PUT("lists/{list_id}/items/{item_id}")
+    suspend fun updateItem(
+        @Path("list_id") listId: String,
+        @Path("item_id") itemId: String,
+        @Body body: UpdateItemRequest
+    ): ApiItem
+
+    @DELETE("lists/{list_id}/items/{item_id}")
+    suspend fun deleteItem(@Path("list_id") listId: String, @Path("item_id") itemId: String)
 }

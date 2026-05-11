@@ -6,10 +6,23 @@ import com.lena.kartoshka.data.db.KartoshkaDatabase
 import com.lena.kartoshka.data.db.PurchaseHistoryEntity
 import com.lena.kartoshka.data.db.ShoppingListEntity
 import com.lena.kartoshka.data.db.toEntity
+import com.lena.kartoshka.network.ApiService
+import com.lena.kartoshka.network.CreateItemRequest
+import com.lena.kartoshka.network.CreateListRequest
+import com.lena.kartoshka.network.UpdateItemRequest
+import com.lena.kartoshka.network.UpdateListRequest
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
-class AppRepository(private val db: KartoshkaDatabase) {
+class AppRepository(
+    private val db: KartoshkaDatabase,
+    private val api: ApiService? = null
+) {
+    private val bgScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // --- Lists ---
 
@@ -21,14 +34,21 @@ class AppRepository(private val db: KartoshkaDatabase) {
         db.shoppingListDao().insert(
             ShoppingListEntity(list.id, list.name, list.color.value.toLong(), position)
         )
+        api?.let { api -> bgScope.launch { runCatching {
+            api.createList(CreateListRequest(list.name, list.color.value.toLong(), position))
+        }}}
     }
 
     suspend fun updateList(list: ShoppingList) {
         db.shoppingListDao().update(list.id, list.name, list.color.value.toLong())
+        api?.let { api -> bgScope.launch { runCatching {
+            api.updateList(list.id, UpdateListRequest(list.name, list.color.value.toLong()))
+        }}}
     }
 
     suspend fun deleteList(id: String) {
         db.shoppingListDao().deleteById(id)
+        api?.let { api -> bgScope.launch { runCatching { api.deleteList(id) } } }
     }
 
     // --- Items ---
@@ -38,23 +58,57 @@ class AppRepository(private val db: KartoshkaDatabase) {
 
     suspend fun insertItem(item: Item, listId: String) {
         db.itemDao().insert(item.toEntity(listId))
+        api?.let { api -> bgScope.launch { runCatching {
+            api.createItem(listId, CreateItemRequest(
+                name = item.name,
+                tags = item.tags.joinToString(",") { it.name },
+                note = item.note,
+                category_id = item.categoryId ?: ""
+            ))
+        }}}
     }
 
     suspend fun insertItems(listId: String, items: List<Item>) {
         db.itemDao().insertAll(items.map { it.toEntity(listId) })
+        api?.let { api -> bgScope.launch { items.forEach { item -> runCatching {
+            api.createItem(listId, CreateItemRequest(
+                name = item.name,
+                tags = item.tags.joinToString(",") { it.name },
+                note = item.note,
+                category_id = item.categoryId ?: ""
+            ))
+        }}}}
     }
 
     suspend fun updateItem(item: Item, listId: String) {
         db.itemDao().update(item.toEntity(listId))
+        api?.let { api -> bgScope.launch { runCatching {
+            api.updateItem(listId, item.id, UpdateItemRequest(
+                name = item.name,
+                tags = item.tags.joinToString(",") { it.name },
+                note = item.note,
+                category_id = item.categoryId ?: ""
+            ))
+        }}}
     }
 
     suspend fun deleteItem(itemId: String) {
+        val entity = db.itemDao().getById(itemId)
         db.itemDao().deleteById(itemId)
+        api?.let { api -> entity?.let { e -> bgScope.launch {
+            runCatching { api.deleteItem(e.listId, itemId) }
+        }}}
     }
 
     suspend fun moveItem(item: Item, toListId: String) {
+        val fromListId = db.itemDao().getById(item.id)?.listId
         db.itemDao().deleteById(item.id)
         db.itemDao().insert(item.toEntity(toListId))
+        api?.let { api -> bgScope.launch {
+            fromListId?.let { runCatching { api.deleteItem(it, item.id) } }
+            runCatching { api.createItem(toListId, CreateItemRequest(item.name,
+                item.tags.joinToString(",") { it.name }, item.note, item.categoryId ?: "")) }
+        }}
     }
 
     suspend fun recordPurchase(item: Item, listId: String) {

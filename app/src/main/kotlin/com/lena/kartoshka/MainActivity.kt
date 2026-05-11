@@ -42,7 +42,7 @@ class MainActivity : ComponentActivity() {
 
     private val sortRepository by lazy { LocalSortRepository(applicationContext) }
     private val lastUsedRepository by lazy { LastUsedRepository(applicationContext) }
-    private val appRepository by lazy { AppRepository(KartoshkaDatabase.get(applicationContext)) }
+    private val appRepository by lazy { AppRepository(KartoshkaDatabase.get(applicationContext), ApiClient.api) }
     private val userPrefsRepository by lazy { UserPrefsRepository(applicationContext) }
     private val tokenStore by lazy {
         TokenStore(applicationContext).also { ApiClient.init(it) }
