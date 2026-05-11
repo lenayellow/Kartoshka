@@ -8,8 +8,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object ApiClient {
 
-    // 10.0.2.2 is how the Android emulator reaches localhost on the host machine
-    const val BASE_URL = "http://10.0.2.2:8080/"
+    // adb reverse tcp:8080 tcp:8080 tunnels this to the host machine's localhost
+    const val BASE_URL = "http://localhost:8080/"
 
     private lateinit var tokenStore: TokenStore
 

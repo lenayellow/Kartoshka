@@ -27,11 +27,14 @@ import com.lena.kartoshka.data.UserPrefsRepository
 import com.lena.kartoshka.data.db.KartoshkaDatabase
 import com.lena.kartoshka.network.ApiClient
 import com.lena.kartoshka.data.sort.LocalSortRepository
+import com.lena.kartoshka.ui.screens.auth.AuthScreen
+import com.lena.kartoshka.ui.screens.auth.AuthViewModel
 import com.lena.kartoshka.ui.screens.listdetail.ListDetailScreen
 import com.lena.kartoshka.ui.screens.mylists.MyListsScreen
 import com.lena.kartoshka.ui.screens.newlist.NewListScreen
 import com.lena.kartoshka.ui.screens.share.ShareScreen
 import com.lena.kartoshka.ui.theme.KartoshkaTheme
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -78,7 +81,20 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    NavHost(navController = navController, startDestination = "lists") {
+                    NavHost(
+                        navController = navController,
+                        startDestination = if (tokenStore.isLoggedIn) "lists" else "auth"
+                    ) {
+                        composable("auth") {
+                            val vm: AuthViewModel = viewModel(
+                                factory = AuthViewModel.Factory(ApiClient.api, tokenStore)
+                            )
+                            AuthScreen(vm = vm, onSuccess = {
+                                navController.navigate("lists") {
+                                    popUpTo("auth") { inclusive = true }
+                                }
+                            })
+                        }
                         composable("lists") {
                             val lists by appRepository.observeLists().collectAsState(initial = emptyList())
                             MyListsScreen(

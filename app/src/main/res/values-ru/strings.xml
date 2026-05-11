@@ -131,6 +131,23 @@
     <string name="scanner_card_name">Название карты (например, ВкусВилл, Лента)</string>
     <string name="scanner_save">Сохранить карту</string>
 
+    <!-- Auth screen -->
+    <string name="auth_login_tab">Войти</string>
+    <string name="auth_register_tab">Создать аккаунт</string>
+    <string name="auth_email">Email</string>
+    <string name="auth_password">Пароль</string>
+    <string name="auth_name">Ваше имя</string>
+    <string name="auth_login_button">Войти</string>
+    <string name="auth_register_button">Зарегистрироваться</string>
+    <string name="auth_password_hint">мин. 8 символов</string>
+    <string name="auth_register_success">Отправили ссылку на %s.\nОткройте её, затем вернитесь и войдите.</string>
+    <string name="auth_error_no_connection">Нет связи с сервером</string>
+    <string name="auth_error_wrong_credentials">Неверный email или пароль</string>
+    <string name="auth_error_email_taken">Этот email уже занят</string>
+    <string name="auth_error_not_verified">Сначала подтвердите email — проверьте почту</string>
+    <string name="auth_error_short_password">Пароль должен быть не менее 8 символов</string>
+    <string name="auth_error_generic">Что-то пошло не так, попробуйте ещё раз</string>
+
     <plurals name="items">
         <item quantity="one">%d товар</item>
         <item quantity="few">%d товара</item>

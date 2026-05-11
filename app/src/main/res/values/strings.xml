@@ -133,6 +133,23 @@
     <string name="scanner_card_name">Card name (e.g. VkusVill, Lenta)</string>
     <string name="scanner_save">Save card</string>
 
+    <!-- Auth screen -->
+    <string name="auth_login_tab">Log in</string>
+    <string name="auth_register_tab">Sign up</string>
+    <string name="auth_email">Email</string>
+    <string name="auth_password">Password</string>
+    <string name="auth_name">Your name</string>
+    <string name="auth_login_button">Enter</string>
+    <string name="auth_register_button">Create account</string>
+    <string name="auth_password_hint">min. 8 characters</string>
+    <string name="auth_register_success">We sent a confirmation link to %s.\nOpen it, then come back and log in.</string>
+    <string name="auth_error_no_connection">Can\'t reach the server</string>
+    <string name="auth_error_wrong_credentials">Wrong email or password</string>
+    <string name="auth_error_email_taken">This email is already taken</string>
+    <string name="auth_error_not_verified">Confirm your email first — check your inbox</string>
+    <string name="auth_error_short_password">Password must be at least 8 characters</string>
+    <string name="auth_error_generic">Something went wrong, try again</string>
+
     <plurals name="items">
         <item quantity="one">%d item</item>
         <item quantity="other">%d items</item>
