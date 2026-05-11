@@ -35,7 +35,7 @@ data class UserResponse(
 data class ApiList(
     val list_id: String,
     val title: String,
-    val color_value: Int?,
+    val color_value: Long,
     val position: Int,
     val created_at: String,
     val updated_at: String
@@ -49,6 +49,6 @@ data class ApiItem(
     val tags: String?,
     val category_id: String?,
     val is_deleted: Boolean,
-    val sort_index: Long,
+    val sort_index: Int,
     val updated_at: String
 )

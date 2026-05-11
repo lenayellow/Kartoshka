@@ -22,6 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.lena.kartoshka.data.AppRepository
 import com.lena.kartoshka.data.LastUsedRepository
+import com.lena.kartoshka.data.SyncRepository
 import com.lena.kartoshka.data.TokenStore
 import com.lena.kartoshka.data.UserPrefsRepository
 import com.lena.kartoshka.data.db.KartoshkaDatabase
@@ -46,6 +47,9 @@ class MainActivity : ComponentActivity() {
     private val tokenStore by lazy {
         TokenStore(applicationContext).also { ApiClient.init(it) }
     }
+    private val syncRepository by lazy {
+        SyncRepository(ApiClient.api, KartoshkaDatabase.get(applicationContext))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,9 +66,13 @@ class MainActivity : ComponentActivity() {
                     val lastListId by lastUsedRepository.observeLastListId().collectAsState(initial = "")
                     var navigatedToLastList by remember { mutableStateOf(false) }
 
-                    // Seed sample data on first launch
+                    // Seed only when not logged in; sync from server when logged in
                     LaunchedEffect(Unit) {
-                        appRepository.seedIfEmpty()
+                        if (tokenStore.isLoggedIn) {
+                            syncRepository.syncLists()
+                        } else {
+                            appRepository.seedIfEmpty()
+                        }
                     }
 
                     // Reopen last list on next launch
@@ -142,6 +150,7 @@ class MainActivity : ComponentActivity() {
 
                             LaunchedEffect(listId) {
                                 lastUsedRepository.saveLastListId(listId)
+                                if (tokenStore.isLoggedIn) syncRepository.syncItems(listId)
                             }
 
                             ListDetailScreen(
