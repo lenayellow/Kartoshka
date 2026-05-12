@@ -82,6 +82,7 @@ dependencies {
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.coil.compose)
 
     // Networking
     implementation(libs.retrofit)

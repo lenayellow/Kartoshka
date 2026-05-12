@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -55,12 +56,16 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lena.kartoshka.R
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import com.lena.kartoshka.data.AppRepository
+import com.lena.kartoshka.data.ListMember
 import com.lena.kartoshka.data.ShoppingList
 import com.lena.kartoshka.data.Suggestion
 import com.lena.kartoshka.data.sampleSuggestions
 import com.lena.kartoshka.data.sort.SortRepository
+import com.lena.kartoshka.ui.components.MemberAvatarRow
+import com.lena.kartoshka.ui.screens.listdetail.ShareListSheet
 import kotlinx.coroutines.launch
 import com.lena.kartoshka.ui.screens.listdetail.ListSettingsScreen
 import com.lena.kartoshka.ui.screens.newlist.NewListScreen
@@ -82,6 +87,14 @@ fun MyListsScreen(
     var isEditMode by remember { mutableStateOf(false) }
     var listForSettings by remember { mutableStateOf<ShoppingList?>(null) }
     var listToEdit by remember { mutableStateOf<ShoppingList?>(null) }
+    var membersMap by remember { mutableStateOf(mapOf<String, List<ListMember>>()) }
+    var shareListId by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(lists) {
+        val map = mutableMapOf<String, List<ListMember>>()
+        lists.forEach { list -> map[list.id] = appRepository.getMembers(list.id) }
+        membersMap = map
+    }
 
     Column(
         modifier = modifier
@@ -107,7 +120,12 @@ fun MyListsScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(lists, key = { it.id }) { list ->
-                    MyListCard(list = list, onClick = { onListClick(list.id) })
+                    MyListCard(
+                        list = list,
+                        members = membersMap[list.id] ?: emptyList(),
+                        onClick = { onListClick(list.id) },
+                        onShareClick = { shareListId = list.id }
+                    )
                 }
                 item {
                     NewListCard(onClick = onNewListClick)
@@ -144,6 +162,15 @@ fun MyListsScreen(
                 scope.launch { appRepository.updateList(updatedList) }
                 listToEdit = null
             }
+        )
+    }
+
+    shareListId?.let { listId ->
+        ShareListSheet(
+            listId = listId,
+            members = membersMap[listId] ?: emptyList(),
+            appRepository = appRepository,
+            onDismiss = { shareListId = null }
         )
     }
 }
@@ -261,7 +288,12 @@ private fun EditableList(
 }
 
 @Composable
-private fun MyListCard(list: ShoppingList, onClick: () -> Unit = {}) {
+private fun MyListCard(
+    list: ShoppingList,
+    members: List<ListMember> = emptyList(),
+    onClick: () -> Unit = {},
+    onShareClick: () -> Unit = {}
+) {
     Surface(
         color = list.color,
         shape = RoundedCornerShape(20.dp),
@@ -270,24 +302,30 @@ private fun MyListCard(list: ShoppingList, onClick: () -> Unit = {}) {
             .fillMaxWidth()
             .heightIn(min = 140.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text(
-                    text = list.name,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                ItemCountBadge(count = list.itemCount)
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(
+                        text = list.name,
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    ItemCountBadge(count = list.itemCount)
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                ArrowCircle()
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            ArrowCircle()
+            Spacer(modifier = Modifier.height(12.dp))
+            MemberAvatarRow(
+                members = members,
+                onAddClick = onShareClick,
+                borderColor = list.color,
+                iconTint = Color.White.copy(alpha = 0.85f)
+            )
         }
     }
 }

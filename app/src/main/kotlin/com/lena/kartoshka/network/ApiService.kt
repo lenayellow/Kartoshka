@@ -35,6 +35,12 @@ interface ApiService {
     suspend fun deleteList(@Path("list_id") listId: String)
 
     // Items
+    @GET("lists/{list_id}/members")
+    suspend fun getMembers(@Path("list_id") listId: String): List<ListMemberResponse>
+
+    @POST("lists/{list_id}/invite")
+    suspend fun createInvite(@Path("list_id") listId: String, @Body body: CreateInviteRequest): CreateInviteResponse
+
     @GET("lists/{list_id}/items")
     suspend fun getItems(@Path("list_id") listId: String): List<ApiItem>
 

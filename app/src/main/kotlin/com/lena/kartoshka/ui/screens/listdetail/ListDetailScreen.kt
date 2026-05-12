@@ -102,11 +102,13 @@ import com.lena.kartoshka.R
 import com.lena.kartoshka.data.AppRepository
 import com.lena.kartoshka.data.Item
 import com.lena.kartoshka.data.ItemCategory
+import com.lena.kartoshka.data.ListMember
 import com.lena.kartoshka.data.LoyaltyCard
 import com.lena.kartoshka.data.ShoppingList
 import com.lena.kartoshka.data.ItemTag
 import com.lena.kartoshka.data.itemCategories
 import com.lena.kartoshka.data.sort.SortRepository
+import com.lena.kartoshka.ui.components.MemberAvatarRow
 import com.lena.kartoshka.ui.screens.ideas.IdeasScreen
 import com.lena.kartoshka.ui.screens.newlist.NewListScreen
 import com.lena.kartoshka.ui.screens.profile.ImageCropScreen
@@ -189,6 +191,12 @@ fun ListDetailScreen(
     var listToEdit by remember { mutableStateOf<ShoppingList?>(null) }
     var showIdeasScreen by remember { mutableStateOf(false) }
     var showProfileScreen by remember { mutableStateOf(false) }
+    var showShareSheet by remember { mutableStateOf(false) }
+    var members by remember { mutableStateOf<List<ListMember>>(emptyList()) }
+
+    LaunchedEffect(list.id) {
+        members = appRepository.getMembers(list.id)
+    }
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showMoveItemPicker by remember { mutableStateOf(false) }
     var photoTargetItem by remember { mutableStateOf<Item?>(null) }
@@ -268,8 +276,14 @@ fun ListDetailScreen(
                 )
                 Row(
                     modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    MemberAvatarRow(
+                        members = members,
+                        onAddClick = { showShareSheet = true },
+                        iconTint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
                     IconButton(onClick = { showListMenu = true }) {
                         Icon(
                             imageVector = Icons.Filled.MoreVert,
@@ -698,6 +712,18 @@ fun ListDetailScreen(
                 }
             )
         }
+    }
+
+    if (showShareSheet) {
+        ShareListSheet(
+            listId = list.id,
+            members = members,
+            appRepository = appRepository,
+            onDismiss = {
+                showShareSheet = false
+                scope.launch { members = appRepository.getMembers(list.id) }
+            }
+        )
     }
 }
 

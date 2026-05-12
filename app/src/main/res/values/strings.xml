@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Kartoshka</string>
+    <string name="app_name">Супер списки</string>
     <string name="my_lists_title">My lists</string>
     <string name="edit">Edit</string>
     <string name="new_list">+ New List</string>
@@ -113,6 +113,11 @@
     <string name="profile_support_dev_hint">Thank you, it means a lot 🙏</string>
     <string name="profile_support_dev_copy">Copy number</string>
     <string name="profile_support_dev_phone" translatable="false">+79046353225</string>
+    <string name="profile_support_tab_sbp" translatable="false">СБП</string>
+    <string name="profile_support_tab_cloudtips" translatable="false">CloudTips</string>
+    <string name="profile_support_cloudtips_subtitle">CloudTips · any amount</string>
+    <string name="profile_support_cloudtips_open">Open CloudTips</string>
+    <string name="profile_support_cloudtips_url" translatable="false">https://pay.cloudtips.ru/p/0d254ecb</string>
     <string name="profile_account">Profile settings</string>
     <string name="profile_change_password">Change password</string>
     <string name="profile_change_email">Change email</string>
@@ -132,6 +137,13 @@
     <string name="scanner_barcode_number">Card number</string>
     <string name="scanner_card_name">Card name (e.g. VkusVill, Lenta)</string>
     <string name="scanner_save">Save card</string>
+
+    <!-- Share sheet -->
+    <string name="share_sheet_title">Share list</string>
+    <string name="share_invite_sent">Invite sent!</string>
+    <string name="share_copy_link">Copy link</string>
+    <string name="share_link_copied">Link copied!</string>
+    <string name="share_role_owner">owner</string>
 
     <!-- Auth screen -->
     <string name="auth_login_tab">Log in</string>

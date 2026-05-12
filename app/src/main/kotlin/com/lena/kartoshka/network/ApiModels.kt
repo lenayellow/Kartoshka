@@ -75,6 +75,24 @@ data class ApiList(
     val updated_at: String
 )
 
+data class ListMemberResponse(
+    val user_id: String,
+    val name: String,
+    val email: String,
+    val avatar_url: String?,
+    val role: String
+)
+
+data class CreateInviteRequest(
+    val invitee_email: String = ""
+)
+
+data class CreateInviteResponse(
+    val invite_token: String,
+    val deep_link: String,
+    val web_link: String
+)
+
 data class ApiItem(
     val item_id: String,
     val list_id: String,

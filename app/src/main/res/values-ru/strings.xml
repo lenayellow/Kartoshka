@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Картошка</string>
+    <string name="app_name">Супер списки</string>
     <string name="my_lists_title">Мои списки</string>
     <string name="edit">Редактировать</string>
     <string name="new_list">+ Новый список</string>
@@ -121,6 +121,8 @@
     <string name="profile_support_dev_subtitle">Перевод по СБП · любая сумма</string>
     <string name="profile_support_dev_hint">Спасибо, это очень приятно 🙏</string>
     <string name="profile_support_dev_copy">Скопировать номер</string>
+    <string name="profile_support_cloudtips_subtitle">CloudTips · любая сумма</string>
+    <string name="profile_support_cloudtips_open">Открыть CloudTips</string>
     <string name="item_photo_section">Изображение</string>
     <string name="scanner_hint">Наведите камеру на штрих-код карты лояльности</string>
     <string name="scanner_manual_entry">Ввести вручную</string>
@@ -130,6 +132,13 @@
     <string name="scanner_barcode_number">Номер карты</string>
     <string name="scanner_card_name">Название карты (например, ВкусВилл, Лента)</string>
     <string name="scanner_save">Сохранить карту</string>
+
+    <!-- Share sheet -->
+    <string name="share_sheet_title">Поделиться списком</string>
+    <string name="share_invite_sent">Приглашение отправлено!</string>
+    <string name="share_copy_link">Скопировать ссылку</string>
+    <string name="share_link_copied">Ссылка скопирована!</string>
+    <string name="share_role_owner">владелец</string>
 
     <!-- Auth screen -->
     <string name="auth_login_tab">Войти</string>

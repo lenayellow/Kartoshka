@@ -7,6 +7,7 @@ import com.lena.kartoshka.data.db.PurchaseHistoryEntity
 import com.lena.kartoshka.data.db.ShoppingListEntity
 import com.lena.kartoshka.data.db.toEntity
 import com.lena.kartoshka.network.ApiService
+import com.lena.kartoshka.network.CreateInviteRequest
 import com.lena.kartoshka.network.CreateItemRequest
 import com.lena.kartoshka.network.CreateListRequest
 import com.lena.kartoshka.network.UpdateItemRequest
@@ -133,6 +134,25 @@ class AppRepository(
     suspend fun deleteLoyaltyCard(id: String) {
         db.loyaltyCardDao().deleteById(id)
     }
+
+    // --- Members & invites ---
+
+    suspend fun getMembers(listId: String): List<ListMember> =
+        runCatching {
+            api?.getMembers(listId)?.map {
+                ListMember(it.user_id, it.name, it.email, it.avatar_url, it.role)
+            }
+        }.getOrNull() ?: emptyList()
+
+    suspend fun createInvite(listId: String, email: String = ""): InviteResult? =
+        runCatching {
+            val resp = api?.createInvite(listId, CreateInviteRequest(email)) ?: return@runCatching null
+            InviteResult(resp.web_link, resp.deep_link)
+        }.getOrNull()
+
+    // --- Current user ---
+
+    suspend fun getCurrentUser() = runCatching { api?.getMe() }.getOrNull()
 
     // --- Seed sample data on first launch ---
 
