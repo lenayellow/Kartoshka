@@ -141,6 +141,7 @@ fun MyListsScreen(
         ListSettingsScreen(
             list = list,
             sortRepository = sortRepository,
+            appRepository = appRepository,
             onBack = { listForSettings = null },
             onDeleteList = {
                 scope.launch { appRepository.deleteList(list.id) }

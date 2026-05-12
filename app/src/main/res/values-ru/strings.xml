@@ -14,7 +14,7 @@
     <string name="change_icon">Изменить иконку</string>
     <string name="add_photo">Добавить фото</string>
     <string name="change_category">Изменить категорию</string>
-    <string name="category_picker_description">Картошка использует категорию для сортировки списка покупок. Присвойте категорию своему товару.</string>
+    <string name="category_picker_description">Супер списки использует категорию для сортировки списка покупок. Присвойте категорию своему товару.</string>
     <string name="category_own_items">Собственные товары</string>
     <string name="move_item">Перенести товар</string>
     <string name="add_photo_title">Выбрать фото</string>
@@ -36,6 +36,10 @@
     <string name="list_settings_configure">Настроить список</string>
     <string name="list_settings_language">Страна и язык</string>
     <string name="list_settings_members">Участники списка</string>
+    <string name="members_screen_title">Список участников</string>
+    <string name="members_count">Участников: %d</string>
+    <string name="members_invite_more">Пригласить кого-то ещё</string>
+    <string name="members_remove">Удалить из списка</string>
     <string name="list_settings_name_image">Название и изображение</string>
     <string name="list_settings_delete">Удалить этот список</string>
     <string name="delete_confirm_message">Действительно удалить этот список?</string>
@@ -59,7 +63,7 @@
     <string name="sort_list_button">Сортировка списка</string>
     <string name="sort_screen_title">Сортировка</string>
     <string name="sort_save">Сохранить</string>
-    <string name="sort_description">Картошка группирует товары по категориям. Расположите их в любом порядке — как удобно вам.</string>
+    <string name="sort_description">Супер списки группирует товары по категориям. Расположите их в любом порядке — как удобно вам.</string>
     <string name="create_list_title">Новый список</string>
     <string name="edit_list_title">Редактирование списка</string>
     <string name="create_list_name_hint">Название списка</string>

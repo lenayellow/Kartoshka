@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -120,6 +121,8 @@ fun ProfileScreen(
     userName: String? = null,
     userEmail: String? = null
 ) {
+    BackHandler { onClose() }
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -444,6 +447,9 @@ fun ProfileScreen(
             ListSettingsScreen(
                 list = settingsList,
                 sortRepository = sortRepository,
+                appRepository = appRepository,
+                currentUserName = userName,
+                currentUserEmail = userEmail,
                 onBack = { selectedListForSettings = null },
                 onDeleteList = {
                     scope.launch { appRepository.deleteList(settingsList.id) }

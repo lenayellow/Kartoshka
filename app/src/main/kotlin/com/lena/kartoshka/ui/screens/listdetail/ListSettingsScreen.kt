@@ -52,6 +52,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lena.kartoshka.R
+import androidx.activity.compose.BackHandler
+import com.lena.kartoshka.data.AppRepository
 import com.lena.kartoshka.data.ShoppingList
 import com.lena.kartoshka.data.itemCategories
 import com.lena.kartoshka.data.sort.SortRepository
@@ -63,6 +65,9 @@ private val DeleteRed = Color(0xFFE53935)
 fun ListSettingsScreen(
     list: ShoppingList,
     sortRepository: SortRepository,
+    appRepository: AppRepository,
+    currentUserName: String? = null,
+    currentUserEmail: String? = null,
     onBack: () -> Unit,
     onDeleteList: () -> Unit,
     onEditNameAndImage: () -> Unit = {}
@@ -82,8 +87,11 @@ fun ListSettingsScreen(
         }
     }
 
+    BackHandler { onBack() }
+
     var showSort by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showMembers by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -188,7 +196,8 @@ fun ListSettingsScreen(
                             SettingsActionTile(
                                 icon = Icons.Filled.Group,
                                 label = stringResource(R.string.list_settings_members),
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                onClick = { showMembers = true }
                             )
                             SettingsActionTile(
                                 icon = Icons.Filled.Edit,
@@ -268,6 +277,16 @@ fun ListSettingsScreen(
                     }
                 }
             }
+        }
+
+        if (showMembers) {
+            ListMembersScreen(
+                listId = list.id,
+                appRepository = appRepository,
+                currentUserName = currentUserName,
+                currentUserEmail = currentUserEmail,
+                onBack = { showMembers = false }
+            )
         }
 
         if (showSort) {

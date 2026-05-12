@@ -144,6 +144,10 @@ class AppRepository(
             }
         }.getOrNull() ?: emptyList()
 
+    suspend fun removeMember(listId: String, userId: String) {
+        runCatching { api?.removeMember(listId, userId) }
+    }
+
     suspend fun createInvite(listId: String, email: String = ""): InviteResult? =
         runCatching {
             val resp = api?.createInvite(listId, CreateInviteRequest(email)) ?: return@runCatching null

@@ -2,6 +2,7 @@ package com.lena.kartoshka.ui.screens.listdetail
 
 import android.Manifest
 import android.content.pm.PackageManager
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
@@ -92,6 +93,8 @@ fun CardScannerFlow(
     onDismiss: () -> Unit
 ) {
     var state by remember { mutableStateOf<ScannerState>(ScannerState.Scanning) }
+
+    BackHandler { onDismiss() }
 
     when (val s = state) {
         is ScannerState.Scanning -> CameraScanner(

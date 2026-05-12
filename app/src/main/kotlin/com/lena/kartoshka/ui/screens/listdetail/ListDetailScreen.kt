@@ -428,6 +428,9 @@ fun ListDetailScreen(
             ListSettingsScreen(
                 list = list,
                 sortRepository = sortRepository,
+                appRepository = appRepository,
+                currentUserName = userName,
+                currentUserEmail = userEmail,
                 onBack = { showListSettings = false },
                 onDeleteList = {
                     scope.launch { appRepository.deleteList(list.id) }

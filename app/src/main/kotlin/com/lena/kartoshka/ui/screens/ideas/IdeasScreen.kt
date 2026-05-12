@@ -37,8 +37,13 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -87,6 +92,7 @@ fun IdeasScreen(
 ) {
     if (onClose != null) BackHandler { onClose() }
     var selectedRecipe by remember { mutableStateOf<Recipe?>(null) }
+    var quickAddRecipe by remember { mutableStateOf<Recipe?>(null) }
     var activeFilter by remember { mutableStateOf(IdeasFilter.ALL) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showCreateScreen by remember { mutableStateOf(false) }
@@ -152,7 +158,8 @@ fun IdeasScreen(
                     RecipeCard(
                         recipe = recipe,
                         onOpenRecipe = { selectedRecipe = recipe },
-                        onToggleSave = { toggleSave(recipe) }
+                        onToggleSave = { toggleSave(recipe) },
+                        onQuickAdd = { quickAddRecipe = recipe }
                     )
                 }
             }
@@ -186,6 +193,20 @@ fun IdeasScreen(
                     }
                     onAddIngredients(listId, newItems)
                     selectedRecipe = null
+                    showSuccessDialog = true
+                }
+            )
+        }
+
+        quickAddRecipe?.let { recipe ->
+            QuickAddToListDialog(
+                recipe = recipe,
+                lists = lists,
+                initialListId = initialListId.ifEmpty { lists.firstOrNull()?.id ?: "" },
+                onDismiss = { quickAddRecipe = null },
+                onAdd = { listId, items ->
+                    onAddIngredients(listId, items)
+                    quickAddRecipe = null
                     showSuccessDialog = true
                 }
             )
@@ -239,7 +260,12 @@ fun IdeasScreen(
 }
 
 @Composable
-private fun RecipeCard(recipe: Recipe, onOpenRecipe: () -> Unit, onToggleSave: () -> Unit) {
+private fun RecipeCard(
+    recipe: Recipe,
+    onOpenRecipe: () -> Unit,
+    onToggleSave: () -> Unit,
+    onQuickAdd: () -> Unit = {}
+) {
     val context = LocalContext.current
     val shareRecipe = {
         val text = buildString {
@@ -313,7 +339,7 @@ private fun RecipeCard(recipe: Recipe, onOpenRecipe: () -> Unit, onToggleSave: (
         Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
             CardAction(icon = Icons.Filled.Link, label = stringResource(R.string.ideas_view), modifier = Modifier.weight(1f), onClick = {})
             CardAction(icon = Icons.Filled.Share, label = stringResource(R.string.ideas_share), modifier = Modifier.weight(1f), onClick = shareRecipe)
-            CardAction(icon = Icons.Filled.PlaylistAdd, label = stringResource(R.string.ideas_add_to_list), modifier = Modifier.weight(1f), onClick = onOpenRecipe)
+            CardAction(icon = Icons.Filled.PlaylistAdd, label = stringResource(R.string.ideas_add_to_list), modifier = Modifier.weight(1f), onClick = onQuickAdd)
         }
     }
     HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
@@ -547,4 +573,95 @@ private fun IngredientCard(ingredient: Ingredient, color: Color, modifier: Modif
             Text(text = ingredient.amount, fontSize = 10.sp, color = Color.White.copy(alpha = 0.7f), textAlign = TextAlign.Center, maxLines = 1)
         }
     }
+}
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun QuickAddToListDialog(
+    recipe: Recipe,
+    lists: List<ShoppingList>,
+    initialListId: String,
+    onDismiss: () -> Unit,
+    onAdd: (listId: String, items: List<Item>) -> Unit
+) {
+    var selectedListId by remember { mutableStateOf(initialListId.ifEmpty { lists.firstOrNull()?.id ?: "" }) }
+    var expanded by remember { mutableStateOf(false) }
+    val selectedList = lists.find { it.id == selectedListId } ?: lists.firstOrNull()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = recipe.title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 17.sp
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "${recipe.ingredients.size} ${ingredientWord(recipe.ingredients.size)}",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+                if (lists.isNotEmpty()) {
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedList?.name ?: "",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text(stringResource(R.string.profile_pick_list)) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth(),
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            lists.forEach { list ->
+                                DropdownMenuItem(
+                                    text = { Text(list.name) },
+                                    onClick = {
+                                        selectedListId = list.id
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val items = recipe.ingredients.map { ing ->
+                        Item(id = "idea_${java.util.UUID.randomUUID()}", name = ing.name, note = ing.amount)
+                    }
+                    onAdd(selectedListId, items)
+                },
+                enabled = selectedList != null
+            ) {
+                Text(stringResource(R.string.ideas_add_to_list), fontWeight = FontWeight.SemiBold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+private fun ingredientWord(count: Int): String = when {
+    count % 100 in 11..19 -> "ингредиентов"
+    count % 10 == 1 -> "ингредиент"
+    count % 10 in 2..4 -> "ингредиента"
+    else -> "ингредиентов"
 }
