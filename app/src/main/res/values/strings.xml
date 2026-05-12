@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Супер списки</string>
+    <string name="app_name">Супер Списки</string>
     <string name="my_lists_title">My lists</string>
     <string name="edit">Edit</string>
     <string name="new_list">+ New List</string>

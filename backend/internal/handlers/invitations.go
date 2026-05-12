@@ -56,11 +56,11 @@ func (h *InvitationHandler) Create(w http.ResponseWriter, r *http.Request) {
 	emailSent := false
 	if req.InviteeEmail != "" {
 		body := fmt.Sprintf(`<html><body>
-<p>Вас пригласили в список покупок в приложении Картошка.</p>
+<p>Вас пригласили в список покупок в приложении Супер Списки.</p>
 <p><a href="%s">Принять приглашение</a></p>
 <p>Ссылка действительна 7 дней.</p>
 </body></html>`, webLink)
-		if err := notifications.SendEmail(req.InviteeEmail, "Приглашение в список — Картошка", body); err != nil {
+		if err := notifications.SendEmail(req.InviteeEmail, "Приглашение в список — Супер Списки", body); err != nil {
 			fmt.Printf("ошибка отправки инвайта: %v\n", err)
 		} else {
 			emailSent = true
