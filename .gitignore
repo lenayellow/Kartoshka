@@ -61,3 +61,8 @@ desktop.ini
 
 # Screenshots folder for prompts (optional — remove this line if you want to commit them)
 # screenshots/
+
+# Backend build artifacts
+backend/api.exe
+backend/api.exe~
+backend/response.json
