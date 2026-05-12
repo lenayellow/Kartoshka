@@ -78,6 +78,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -85,6 +86,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -114,7 +116,9 @@ fun ProfileScreen(
     onAvatarChange: (String?) -> Unit,
     onClose: () -> Unit,
     onDeleteCurrentList: () -> Unit,
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    userName: String? = null,
+    userEmail: String? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -229,7 +233,26 @@ fun ProfileScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (userName != null) {
+                    Text(
+                        text = userName!!,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                if (userEmail != null) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = userEmail!!,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // ── Settings section ──────────────────────────────────
                 ProfileSectionHeader(
@@ -371,32 +394,48 @@ fun ProfileScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
-            }
+                Spacer(modifier = Modifier.height(32.dp))
 
-            // Logout button
-            OutlinedButton(
-                onClick = { onLogout() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = navBarPadding + 12.dp, top = 8.dp),
-                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Logout,
+                // Made in Russia badge
+                Image(
+                    painter = painterResource(R.drawable.made_in_russia),
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface
+                    modifier = Modifier
+                        .width(80.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .alpha(0.6f),
+                    contentScale = ContentScale.Fit,
+                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(
+                        MaterialTheme.colorScheme.onSurface
+                    )
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.profile_logout),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 15.sp,
-                    modifier = Modifier.padding(vertical = 6.dp)
-                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Logout button
+                OutlinedButton(
+                    onClick = { onLogout() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = navBarPadding + 12.dp),
+                    border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Logout,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.profile_logout),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        modifier = Modifier.padding(vertical = 6.dp)
+                    )
+                }
             }
         }
 
@@ -613,13 +652,28 @@ fun ProfileScreen(
     if (showSupportSheet) {
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         val phone = stringResource(R.string.profile_support_dev_phone)
+        val cloudtipsUrl = stringResource(R.string.profile_support_cloudtips_url)
 
-        var qrBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+        var selectedTab by remember { mutableStateOf(0) }
+        var sbpQrBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+        var cloudtipsQrBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
+
         LaunchedEffect(Unit) {
-            qrBitmap = withContext(Dispatchers.IO) {
+            sbpQrBitmap = withContext(Dispatchers.IO) {
                 runCatching {
                     val size = 512
                     val bitMatrix = MultiFormatWriter().encode(phone, BarcodeFormat.QR_CODE, size, size)
+                    val pixels = IntArray(size * size) { i ->
+                        if (bitMatrix[i % size, i / size]) android.graphics.Color.BLACK
+                        else android.graphics.Color.WHITE
+                    }
+                    Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888).asImageBitmap()
+                }.getOrNull()
+            }
+            cloudtipsQrBitmap = withContext(Dispatchers.IO) {
+                runCatching {
+                    val size = 512
+                    val bitMatrix = MultiFormatWriter().encode(cloudtipsUrl, BarcodeFormat.QR_CODE, size, size)
                     val pixels = IntArray(size * size) { i ->
                         if (bitMatrix[i % size, i / size]) android.graphics.Color.BLACK
                         else android.graphics.Color.WHITE
@@ -650,53 +704,124 @@ fun ProfileScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Text(
-                    text = stringResource(R.string.profile_support_dev_subtitle),
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                qrBitmap?.let { bmp ->
-                    Surface(
-                        color = Color.White,
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.size(220.dp)
-                    ) {
-                        Image(
-                            bitmap = bmp,
-                            contentDescription = null,
+                // Tab switcher
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                ) {
+                    listOf(
+                        stringResource(R.string.profile_support_tab_sbp),
+                        stringResource(R.string.profile_support_tab_cloudtips)
+                    ).forEachIndexed { index, label ->
+                        Box(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp)
-                        )
+                                .weight(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(
+                                    if (selectedTab == index) MaterialTheme.colorScheme.primary
+                                    else Color.Transparent
+                                )
+                                .clickable { selectedTab = index }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (selectedTab == index) MaterialTheme.colorScheme.onPrimary
+                                        else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
-                Text(
-                    text = phone,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Medium,
-                    letterSpacing = 1.sp,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                OutlinedButton(
-                    onClick = {
-                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                        clipboard.setPrimaryClip(ClipData.newPlainText("sbp_phone", phone))
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.ContentCopy,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
+                if (selectedTab == 0) {
+                    Text(
+                        text = stringResource(R.string.profile_support_dev_subtitle),
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.profile_support_dev_copy))
+
+                    sbpQrBitmap?.let { bmp ->
+                        Surface(
+                            color = Color.White,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.size(220.dp)
+                        ) {
+                            Image(
+                                bitmap = bmp,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp)
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = phone,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 1.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    OutlinedButton(
+                        onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            clipboard.setPrimaryClip(ClipData.newPlainText("sbp_phone", phone))
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ContentCopy,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.profile_support_dev_copy))
+                    }
+                } else {
+                    Text(
+                        text = stringResource(R.string.profile_support_cloudtips_subtitle),
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    cloudtipsQrBitmap?.let { bmp ->
+                        Surface(
+                            color = Color.White,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.size(220.dp)
+                        ) {
+                            Image(
+                                bitmap = bmp,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp)
+                            )
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(cloudtipsUrl))
+                            runCatching { context.startActivity(intent) }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(stringResource(R.string.profile_support_cloudtips_open))
+                    }
                 }
 
                 Text(

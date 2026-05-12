@@ -116,9 +116,14 @@ import com.lena.kartoshka.ui.screens.profile.ProfileScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.print.PrintAttributes
+import android.print.PrintManager
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -681,10 +686,28 @@ fun ListDetailScreen(
             sheetState = listMenuSheetState,
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         ) {
-            ListMenuSheet(onSettingsClick = {
-                showListMenu = false
-                showListSettings = true
-            })
+            ListMenuSheet(
+                onSendClick = {
+                    showListMenu = false
+                    showShareSheet = true
+                },
+                onPrintClick = {
+                    showListMenu = false
+                    printList(context, list.name, activeItems.toList())
+                },
+                onRecommendClick = {
+                    showListMenu = false
+                    recommendApp(context)
+                },
+                onCardsClick = {
+                    showListMenu = false
+                    showCardScanner = true
+                },
+                onSettingsClick = {
+                    showListMenu = false
+                    showListSettings = true
+                }
+            )
         }
     }
 
@@ -1702,8 +1725,47 @@ private fun AddItemInfoSheet(
     }
 }
 
+private fun printList(context: Context, listName: String, items: List<Item>) {
+    val html = buildString {
+        append("<html><body style='font-family:sans-serif;padding:24px'>")
+        append("<h2 style='margin-bottom:16px'>$listName</h2><ul style='list-style:none;padding:0'>")
+        items.forEach {
+            append("<li style='font-size:16px;padding:6px 0;border-bottom:1px solid #eee'>${it.name}")
+            if (it.note.isNotBlank()) append(" <span style='color:#888;font-size:13px'>${it.note}</span>")
+            append("</li>")
+        }
+        append("</ul></body></html>")
+    }
+    val webView = WebView(context)
+    webView.webViewClient = object : WebViewClient() {
+        override fun onPageFinished(view: WebView, url: String) {
+            val printManager = context.getSystemService(Context.PRINT_SERVICE) as PrintManager
+            val adapter = view.createPrintDocumentAdapter(listName)
+            printManager.print(listName, adapter, PrintAttributes.Builder().build())
+        }
+    }
+    webView.loadDataWithBaseURL(null, html, "text/HTML", "UTF-8", null)
+}
+
+private fun recommendApp(context: Context) {
+    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(
+            android.content.Intent.EXTRA_TEXT,
+            "Попробуй Супер списки — удобное приложение для списков покупок 🛒\nhttps://apps.rustore.ru/app/com.lena.kartoshka"
+        )
+    }
+    context.startActivity(android.content.Intent.createChooser(intent, null))
+}
+
 @Composable
-private fun ListMenuSheet(onSettingsClick: () -> Unit = {}) {
+private fun ListMenuSheet(
+    onSendClick: () -> Unit = {},
+    onPrintClick: () -> Unit = {},
+    onRecommendClick: () -> Unit = {},
+    onCardsClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {}
+) {
     val navBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     Column(
         modifier = Modifier
@@ -1718,24 +1780,23 @@ private fun ListMenuSheet(onSettingsClick: () -> Unit = {}) {
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)
         )
 
-        ListMenuItem(icon = Icons.Filled.AutoAwesome, label = stringResource(R.string.list_menu_suggestions))
-        ListMenuItem(icon = Icons.Filled.Share,       label = stringResource(R.string.list_menu_send))
-        ListMenuItem(icon = Icons.Filled.Print,       label = stringResource(R.string.list_menu_print))
+        ListMenuItem(icon = Icons.Filled.Share,      label = stringResource(R.string.list_menu_send),      onClick = onSendClick)
+        ListMenuItem(icon = Icons.Filled.Print,       label = stringResource(R.string.list_menu_print),     onClick = onPrintClick)
 
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 8.dp),
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         )
 
-        ListMenuItem(icon = Icons.Filled.Favorite, label = stringResource(R.string.list_menu_recommend))
-        ListMenuItem(icon = Icons.Filled.Settings, label = stringResource(R.string.list_menu_settings), onClick = onSettingsClick)
+        ListMenuItem(icon = Icons.Filled.Favorite, label = stringResource(R.string.list_menu_recommend), onClick = onRecommendClick)
+        ListMenuItem(icon = Icons.Filled.Settings, label = stringResource(R.string.list_menu_settings),  onClick = onSettingsClick)
 
         HorizontalDivider(
             modifier = Modifier.padding(vertical = 8.dp),
             color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
         )
 
-        ListMenuItem(icon = Icons.Filled.CreditCard, label = stringResource(R.string.list_menu_cards))
+        ListMenuItem(icon = Icons.Filled.CreditCard, label = stringResource(R.string.list_menu_cards), onClick = onCardsClick)
     }
 }
 
