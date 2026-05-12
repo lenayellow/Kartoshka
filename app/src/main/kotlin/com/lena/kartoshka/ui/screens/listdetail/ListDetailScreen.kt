@@ -126,8 +126,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import java.io.File
 
-private val ItemCardColor = Color(0xFFE07870)
-private val RecentlyUsedCardColor = Color(0xFF4A8579)
+private val ItemCardColor = Color(0xFFFF5449)
+private val RecentlyUsedCardColor = Color(0xFF4D662A)
 private val DeleteRed = Color(0xFFE53935)
 
 private fun detectCategoryId(name: String): String? =
@@ -152,6 +152,8 @@ fun ListDetailScreen(
     onThemeChange: (Boolean) -> Unit = {},
     avatarPath: String? = null,
     onAvatarChange: (String?) -> Unit = {},
+    userName: String? = null,
+    userEmail: String? = null,
     onLogout: () -> Unit = {}
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -457,7 +459,9 @@ fun ListDetailScreen(
                     scope.launch { appRepository.deleteList(list.id) }
                     onBack()
                 },
-                onLogout = onLogout
+                onLogout = onLogout,
+                userName = userName,
+                userEmail = userEmail
             )
         }
       }

@@ -66,6 +66,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 import com.lena.kartoshka.R
 import com.lena.kartoshka.data.Ingredient
 import com.lena.kartoshka.data.Item
@@ -238,6 +240,26 @@ fun IdeasScreen(
 
 @Composable
 private fun RecipeCard(recipe: Recipe, onOpenRecipe: () -> Unit, onToggleSave: () -> Unit) {
+    val context = LocalContext.current
+    val shareRecipe = {
+        val text = buildString {
+            appendLine(recipe.title)
+            appendLine("${recipe.author} — ${recipe.tagline}")
+            appendLine()
+            appendLine("Ингредиенты:")
+            recipe.ingredients.forEach { appendLine("• ${it.name} — ${it.amount}") }
+        }
+        context.startActivity(
+            Intent.createChooser(
+                Intent(Intent.ACTION_SEND).apply {
+                    putExtra(Intent.EXTRA_TEXT, text)
+                    type = "text/plain"
+                },
+                null
+            )
+        )
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -290,7 +312,7 @@ private fun RecipeCard(recipe: Recipe, onOpenRecipe: () -> Unit, onToggleSave: (
 
         Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
             CardAction(icon = Icons.Filled.Link, label = stringResource(R.string.ideas_view), modifier = Modifier.weight(1f), onClick = {})
-            CardAction(icon = Icons.Filled.Share, label = stringResource(R.string.ideas_share), modifier = Modifier.weight(1f), onClick = {})
+            CardAction(icon = Icons.Filled.Share, label = stringResource(R.string.ideas_share), modifier = Modifier.weight(1f), onClick = shareRecipe)
             CardAction(icon = Icons.Filled.PlaylistAdd, label = stringResource(R.string.ideas_add_to_list), modifier = Modifier.weight(1f), onClick = onOpenRecipe)
         }
     }
@@ -319,6 +341,26 @@ private fun RecipeDetailOverlay(
     onAddIngredients: (listId: String, List<Ingredient>) -> Unit
 ) {
     BackHandler { onBack() }
+
+    val context = LocalContext.current
+    val shareRecipe = {
+        val text = buildString {
+            appendLine(recipe.title)
+            appendLine("${recipe.author} — ${recipe.tagline}")
+            appendLine()
+            appendLine("Ингредиенты:")
+            recipe.ingredients.forEach { appendLine("• ${it.name} — ${it.amount}") }
+        }
+        context.startActivity(
+            Intent.createChooser(
+                Intent(Intent.ACTION_SEND).apply {
+                    putExtra(Intent.EXTRA_TEXT, text)
+                    type = "text/plain"
+                },
+                null
+            )
+        )
+    }
 
     var portions by remember { mutableIntStateOf(4) }
     var selectedListId by remember { mutableStateOf(initialListId) }
@@ -363,7 +405,7 @@ private fun RecipeDetailOverlay(
             verticalAlignment = Alignment.CenterVertically
         ) {
             CardAction(icon = Icons.Filled.Link, label = stringResource(R.string.ideas_view), onClick = {})
-            CardAction(icon = Icons.Filled.Share, label = stringResource(R.string.ideas_share), onClick = {})
+            CardAction(icon = Icons.Filled.Share, label = stringResource(R.string.ideas_share), onClick = shareRecipe)
             Row(
                 modifier = Modifier.clickable(onClick = onToggleSave),
                 verticalAlignment = Alignment.CenterVertically,
@@ -478,7 +520,7 @@ private fun RecipeDetailOverlay(
 }
 
 @Composable
-private fun IngredientGrid(ingredients: List<Ingredient>, cardColor: Color = Color(0xFFE07870), modifier: Modifier = Modifier) {
+private fun IngredientGrid(ingredients: List<Ingredient>, cardColor: Color = Color(0xFFFF5449), modifier: Modifier = Modifier) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         ingredients.chunked(3).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
