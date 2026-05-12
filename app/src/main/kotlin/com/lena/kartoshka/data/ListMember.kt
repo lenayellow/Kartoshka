@@ -8,4 +8,4 @@ data class ListMember(
     val role: String
 )
 
-data class InviteResult(val webLink: String, val deepLink: String)
+data class InviteResult(val webLink: String, val deepLink: String, val emailSent: Boolean)

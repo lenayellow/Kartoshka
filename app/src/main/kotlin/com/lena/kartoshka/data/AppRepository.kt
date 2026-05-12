@@ -36,7 +36,7 @@ class AppRepository(
             ShoppingListEntity(list.id, list.name, list.color.value.toLong(), position)
         )
         api?.let { api -> bgScope.launch { runCatching {
-            api.createList(CreateListRequest(list.name, list.color.value.toLong(), position))
+            api.createList(CreateListRequest(list.id, list.name, list.color.value.toLong(), position))
         }}}
     }
 
@@ -151,7 +151,7 @@ class AppRepository(
     suspend fun createInvite(listId: String, email: String = ""): InviteResult? =
         runCatching {
             val resp = api?.createInvite(listId, CreateInviteRequest(email)) ?: return@runCatching null
-            InviteResult(resp.web_link, resp.deep_link)
+            InviteResult(resp.web_link, resp.deep_link, resp.email_sent)
         }.getOrNull()
 
     // --- Current user ---

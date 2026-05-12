@@ -54,6 +54,7 @@
     <string name="list_menu_settings">Настройки списка</string>
     <string name="list_menu_cards">Карты</string>
     <string name="cancel">Отменить</string>
+    <string name="add_item_button">Добавить</string>
     <string name="delete_item">Удалить добавленный товар</string>
     <string name="delete_item_confirm">Действительно удалить этот товар?</string>
     <string name="delete_item_yes">ДА, УДАЛИТЬ ТОВАР</string>
@@ -143,6 +144,8 @@
     <string name="share_copy_link">Скопировать ссылку</string>
     <string name="share_link_copied">Ссылка скопирована!</string>
     <string name="share_role_owner">владелец</string>
+    <string name="share_error">Не получилось. Проверьте подключение к серверу.</string>
+    <string name="share_email_failed_link_copied">Письмо не доставлено — ссылка-приглашение скопирована в буфер обмена. Отправьте её вручную.</string>
 
     <!-- Auth screen -->
     <string name="auth_login_tab">Войти</string>
@@ -160,6 +163,14 @@
     <string name="auth_error_not_verified">Сначала подтвердите email — проверьте почту</string>
     <string name="auth_error_short_password">Пароль должен быть не менее 8 символов</string>
     <string name="auth_error_generic">Что-то пошло не так, попробуйте ещё раз</string>
+    <string name="auth_yandex_button">Войти с Яндекс ID</string>
+    <string name="auth_or">или</string>
+    <string name="auth_forgot_password">Забыл пароль?</string>
+    <string name="auth_forgot_dialog_title">Сброс пароля</string>
+    <string name="auth_forgot_dialog_text">Введите email — мы отправим ссылку для сброса пароля.</string>
+    <string name="auth_error_email_not_found">Аккаунт с таким email не найден</string>
+    <string name="auth_forgot_send">Отправить</string>
+    <string name="auth_forgot_sent">Письмо отправлено! Проверьте почту и перейдите по ссылке.</string>
 
     <plurals name="items">
         <item quantity="one">%d товар</item>

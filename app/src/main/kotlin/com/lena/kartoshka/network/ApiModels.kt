@@ -24,6 +24,14 @@ data class LogoutRequest(
     val refresh_token: String
 )
 
+data class ForgotPasswordRequest(
+    val email: String
+)
+
+data class YandexLoginRequest(
+    val code: String
+)
+
 data class RegisterResponse(
     val message: String,
     val user_id: String
@@ -37,6 +45,7 @@ data class UserResponse(
 )
 
 data class CreateListRequest(
+    val list_id: String = "",
     val title: String,
     val color_value: Long,
     val position: Int
@@ -90,7 +99,8 @@ data class CreateInviteRequest(
 data class CreateInviteResponse(
     val invite_token: String,
     val deep_link: String,
-    val web_link: String
+    val web_link: String,
+    val email_sent: Boolean = true
 )
 
 data class ApiItem(

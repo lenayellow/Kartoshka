@@ -54,6 +54,7 @@
     <string name="list_menu_settings">List settings</string>
     <string name="list_menu_cards">Cards</string>
     <string name="cancel">Cancel</string>
+    <string name="add_item_button">Add</string>
     <string name="delete_item">Delete item</string>
     <string name="delete_item_confirm">Really delete this item?</string>
     <string name="delete_item_yes">Yes, delete item</string>
@@ -148,6 +149,8 @@
     <string name="share_copy_link">Copy link</string>
     <string name="share_link_copied">Link copied!</string>
     <string name="share_role_owner">owner</string>
+    <string name="share_error">Something went wrong. Check your connection.</string>
+    <string name="share_email_failed_link_copied">Email could not be delivered — the invite link was copied to your clipboard. Send it manually.</string>
 
     <!-- Auth screen -->
     <string name="auth_login_tab">Log in</string>
@@ -165,6 +168,14 @@
     <string name="auth_error_not_verified">Confirm your email first — check your inbox</string>
     <string name="auth_error_short_password">Password must be at least 8 characters</string>
     <string name="auth_error_generic">Something went wrong, try again</string>
+    <string name="auth_yandex_button">Sign in with Yandex ID</string>
+    <string name="auth_or">or</string>
+    <string name="auth_forgot_password">Forgot password?</string>
+    <string name="auth_forgot_dialog_title">Reset password</string>
+    <string name="auth_forgot_dialog_text">Enter your email and we\'ll send you a reset link.</string>
+    <string name="auth_error_email_not_found">No account with this email</string>
+    <string name="auth_forgot_send">Send</string>
+    <string name="auth_forgot_sent">Email sent! Check your inbox and follow the link.</string>
 
     <plurals name="items">
         <item quantity="one">%d item</item>

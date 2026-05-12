@@ -24,7 +24,7 @@ func NewListRepo(db *DB) *ListRepo {
 func (r *ListRepo) GetMemberRole(ctx context.Context, listID, userID string) (string, error) {
 	var role string
 	err := r.db.Driver.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
-		_, res, err := s.Execute(ctx, table.SerializableReadWriteTxControl(),
+		_, res, err := s.Execute(ctx, table.OnlineReadOnlyTxControl(),
 			`DECLARE $list_id AS Utf8;
 			 DECLARE $user_id AS Utf8;
 			 SELECT role FROM list_members
@@ -52,10 +52,12 @@ func (r *ListRepo) GetMemberRole(ctx context.Context, listID, userID string) (st
 func (r *ListRepo) GetAllForUser(ctx context.Context, userID string) ([]models.List, error) {
 	var lists []models.List
 	err := r.db.Driver.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
-		_, res, err := s.Execute(ctx, table.SerializableReadWriteTxControl(),
+		_, res, err := s.Execute(ctx, table.OnlineReadOnlyTxControl(),
 			`DECLARE $user_id AS Utf8;
-			 SELECT l.list_id, l.owner_id, l.title, l.color_value, l.position,
-			        l.category_order, l.hidden_categories, l.created_at, l.updated_at
+			 SELECT l.list_id AS list_id, l.owner_id AS owner_id, l.title AS title,
+			        l.color_value AS color_value, l.position AS position,
+			        l.category_order AS category_order, l.hidden_categories AS hidden_categories,
+			        l.created_at AS created_at, l.updated_at AS updated_at
 			 FROM list_members AS lm
 			 JOIN lists AS l ON lm.list_id = l.list_id
 			 WHERE lm.user_id = $user_id
@@ -86,7 +88,7 @@ func (r *ListRepo) GetAllForUser(ctx context.Context, userID string) ([]models.L
 func (r *ListRepo) GetByID(ctx context.Context, listID string) (*models.List, error) {
 	var list *models.List
 	err := r.db.Driver.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
-		_, res, err := s.Execute(ctx, table.SerializableReadWriteTxControl(),
+		_, res, err := s.Execute(ctx, table.OnlineReadOnlyTxControl(),
 			`DECLARE $list_id AS Utf8;
 			 SELECT list_id, owner_id, title, color_value, position,
 			        category_order, hidden_categories, created_at, updated_at
@@ -112,10 +114,14 @@ func (r *ListRepo) GetByID(ctx context.Context, listID string) (*models.List, er
 }
 
 // Create создаёт список и добавляет создателя как owner.
-func (r *ListRepo) Create(ctx context.Context, ownerID, title string, colorValue int64, position int32) (*models.List, error) {
+// Если listID не пустой — использует его; иначе генерирует UUID.
+func (r *ListRepo) Create(ctx context.Context, ownerID, listID, title string, colorValue int64, position int32) (*models.List, error) {
 	now := time.Now()
+	if listID == "" {
+		listID = uuid.New().String()
+	}
 	list := &models.List{
-		ListID:     uuid.New().String(),
+		ListID:     listID,
 		OwnerID:    ownerID,
 		Title:      title,
 		ColorValue: colorValue,
@@ -125,7 +131,7 @@ func (r *ListRepo) Create(ctx context.Context, ownerID, title string, colorValue
 	}
 
 	err := r.db.Driver.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
-		_, _, err := s.Execute(ctx, table.SerializableReadWriteTxControl(),
+		_, _, err := s.Execute(ctx, table.SerializableReadWriteTxControl(table.CommitTx()),
 			`DECLARE $list_id AS Utf8;
 			 DECLARE $owner_id AS Utf8;
 			 DECLARE $title AS Utf8;
@@ -152,7 +158,7 @@ func (r *ListRepo) Create(ctx context.Context, ownerID, title string, colorValue
 	}
 
 	err = r.db.Driver.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
-		_, _, err := s.Execute(ctx, table.SerializableReadWriteTxControl(),
+		_, _, err := s.Execute(ctx, table.SerializableReadWriteTxControl(table.CommitTx()),
 			`DECLARE $list_id AS Utf8;
 			 DECLARE $user_id AS Utf8;
 			 DECLARE $joined_at AS Datetime;
@@ -177,7 +183,7 @@ func (r *ListRepo) Create(ctx context.Context, ownerID, title string, colorValue
 func (r *ListRepo) Update(ctx context.Context, listID, title string, colorValue int64, position int32, categoryOrder, hiddenCategories string) error {
 	now := time.Now()
 	return r.db.Driver.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
-		_, _, err := s.Execute(ctx, table.SerializableReadWriteTxControl(),
+		_, _, err := s.Execute(ctx, table.SerializableReadWriteTxControl(table.CommitTx()),
 			`DECLARE $list_id AS Utf8;
 			 DECLARE $title AS Utf8;
 			 DECLARE $color_value AS Int64;
@@ -210,7 +216,7 @@ func (r *ListRepo) Delete(ctx context.Context, listID, userID string) error {
 
 	// Шаг 1: soft delete всех товаров списка
 	err := r.db.Driver.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
-		_, _, err := s.Execute(ctx, table.SerializableReadWriteTxControl(),
+		_, _, err := s.Execute(ctx, table.SerializableReadWriteTxControl(table.CommitTx()),
 			`DECLARE $list_id AS Utf8;
 			 DECLARE $updated_by AS Utf8;
 			 DECLARE $updated_at AS Datetime;
@@ -231,7 +237,7 @@ func (r *ListRepo) Delete(ctx context.Context, listID, userID string) error {
 
 	// Шаг 2: удалить всех участников
 	err = r.db.Driver.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
-		_, _, err := s.Execute(ctx, table.SerializableReadWriteTxControl(),
+		_, _, err := s.Execute(ctx, table.SerializableReadWriteTxControl(table.CommitTx()),
 			`DECLARE $list_id AS Utf8;
 			 DELETE FROM list_members WHERE list_id = $list_id`,
 			table.NewQueryParameters(
@@ -246,7 +252,7 @@ func (r *ListRepo) Delete(ctx context.Context, listID, userID string) error {
 
 	// Шаг 3: удалить сам список
 	return r.db.Driver.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
-		_, _, err := s.Execute(ctx, table.SerializableReadWriteTxControl(),
+		_, _, err := s.Execute(ctx, table.SerializableReadWriteTxControl(table.CommitTx()),
 			`DECLARE $list_id AS Utf8;
 			 DELETE FROM lists WHERE list_id = $list_id`,
 			table.NewQueryParameters(
@@ -261,9 +267,10 @@ func (r *ListRepo) Delete(ctx context.Context, listID, userID string) error {
 func (r *ListRepo) GetMembers(ctx context.Context, listID string) ([]models.ListMember, error) {
 	var members []models.ListMember
 	err := r.db.Driver.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
-		_, res, err := s.Execute(ctx, table.SerializableReadWriteTxControl(),
+		_, res, err := s.Execute(ctx, table.OnlineReadOnlyTxControl(),
 			`DECLARE $list_id AS Utf8;
-			 SELECT lm.user_id, lm.role, lm.joined_at, u.name, u.email, u.avatar_url
+			 SELECT lm.user_id AS user_id, lm.role AS role, lm.joined_at AS joined_at,
+			        u.name AS name, u.email AS email, u.avatar_url AS avatar_url
 			 FROM list_members AS lm
 			 JOIN users AS u ON lm.user_id = u.user_id
 			 WHERE lm.list_id = $list_id`,
@@ -284,7 +291,7 @@ func (r *ListRepo) GetMembers(ctx context.Context, listID string) ([]models.List
 					named.Required("joined_at", &m.JoinedAt),
 					named.Required("name", &m.UserName),
 					named.Required("email", &m.UserEmail),
-					named.Optional("avatar_url", &m.AvatarUrl),
+					named.OptionalWithDefault("avatar_url", &m.AvatarUrl),
 				); err != nil {
 					return err
 				}
@@ -299,7 +306,7 @@ func (r *ListRepo) GetMembers(ctx context.Context, listID string) ([]models.List
 // RemoveMember удаляет участника из списка.
 func (r *ListRepo) RemoveMember(ctx context.Context, listID, userID string) error {
 	return r.db.Driver.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
-		_, _, err := s.Execute(ctx, table.SerializableReadWriteTxControl(),
+		_, _, err := s.Execute(ctx, table.SerializableReadWriteTxControl(table.CommitTx()),
 			`DECLARE $list_id AS Utf8;
 			 DECLARE $user_id AS Utf8;
 			 DELETE FROM list_members WHERE list_id = $list_id AND user_id = $user_id`,
@@ -322,8 +329,8 @@ func scanList(res interface {
 		named.Required("title", &l.Title),
 		named.Required("color_value", &l.ColorValue),
 		named.Required("position", &l.Position),
-		named.Optional("category_order", &l.CategoryOrder),
-		named.Optional("hidden_categories", &l.HiddenCategories),
+		named.OptionalWithDefault("category_order", &l.CategoryOrder),
+		named.OptionalWithDefault("hidden_categories", &l.HiddenCategories),
 		named.Required("created_at", &l.CreatedAt),
 		named.Required("updated_at", &l.UpdatedAt),
 	)

@@ -71,9 +71,21 @@ fun ShareListSheet(
         scope.launch {
             isSending = true
             focusManager.clearFocus()
-            appRepository.createInvite(listId, email.trim())
-            email = ""
-            feedback = "sent"
+            val result = appRepository.createInvite(listId, email.trim())
+            when {
+                result == null -> feedback = "error"
+                result.emailSent -> {
+                    email = ""
+                    feedback = "sent"
+                }
+                else -> {
+                    // Сервер создал инвайт, но письмо не ушло — кладём ссылку в буфер,
+                    // чтобы пользователь мог отправить вручную.
+                    clipboardManager.setText(AnnotatedString(result.webLink))
+                    email = ""
+                    feedback = "email_failed"
+                }
+            }
             isSending = false
         }
     }
@@ -167,9 +179,12 @@ fun ShareListSheet(
                     text = when (feedback) {
                         "sent" -> stringResource(R.string.share_invite_sent)
                         "copied" -> stringResource(R.string.share_link_copied)
+                        "error" -> stringResource(R.string.share_error)
+                        "email_failed" -> stringResource(R.string.share_email_failed_link_copied)
                         else -> ""
                     },
-                    color = MaterialTheme.colorScheme.primary,
+                    color = if (feedback == "error") MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.primary,
                     fontSize = 14.sp,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
@@ -185,9 +200,12 @@ fun ShareListSheet(
                         isCopying = true
                         feedback = ""
                         val result = appRepository.createInvite(listId)
-                        result?.webLink?.let { link ->
+                        val link = result?.webLink
+                        if (!link.isNullOrEmpty()) {
                             clipboardManager.setText(AnnotatedString(link))
                             feedback = "copied"
+                        } else {
+                            feedback = "error"
                         }
                         isCopying = false
                     }
