@@ -10,6 +10,8 @@ import com.lena.kartoshka.data.TokenStore
 import com.lena.kartoshka.network.ApiService
 import com.lena.kartoshka.network.EmailLoginRequest
 import com.lena.kartoshka.network.EmailRegisterRequest
+import com.lena.kartoshka.network.ForgotPasswordRequest
+import com.lena.kartoshka.network.YandexLoginRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,9 +28,9 @@ class AuthViewModel(
     sealed class UiState {
         object Idle : UiState()
         object Loading : UiState()
-        object LoginSuccess : UiState()
-        data class RegisterSuccess(val email: String) : UiState()
+        data class LoginSuccess(val name: String, val email: String) : UiState()
         data class Error(val message: String) : UiState()
+        object ForgotPasswordSent : UiState()
     }
 
     var mode by mutableStateOf(Mode.LOGIN)
@@ -67,7 +69,11 @@ class AuthViewModel(
                 }
                 tokenStore.accessToken = tokens.access_token
                 tokenStore.refreshToken = tokens.refresh_token
-                _state.value = UiState.LoginSuccess
+                val profile = runCatching { api.getMe() }.getOrNull()
+                _state.value = UiState.LoginSuccess(
+                    name = profile?.name ?: if (mode == Mode.REGISTER) name.trim() else "",
+                    email = profile?.email ?: email.trim()
+                )
             } catch (e: HttpException) {
                 val msg = when (e.code()) {
                     401 -> errorWrongCredentials
@@ -82,8 +88,43 @@ class AuthViewModel(
         }
     }
 
+    fun loginWithYandex(code: String, errorNoConnection: String) {
+        viewModelScope.launch {
+            _state.value = UiState.Loading
+            try {
+                val tokens = api.loginYandex(YandexLoginRequest(code))
+                tokenStore.accessToken = tokens.access_token
+                tokenStore.refreshToken = tokens.refresh_token
+                val profile = runCatching { api.getMe() }.getOrNull()
+                _state.value = UiState.LoginSuccess(
+                    name = profile?.name ?: "",
+                    email = profile?.email ?: ""
+                )
+            } catch (e: Exception) {
+                _state.value = UiState.Error(errorNoConnection)
+            }
+        }
+    }
+
+    fun forgotPassword(email: String, errorNotFound: String, errorNoConnection: String) {
+        viewModelScope.launch {
+            _state.value = UiState.Loading
+            try {
+                api.forgotPassword(ForgotPasswordRequest(email.trim()))
+                _state.value = UiState.ForgotPasswordSent
+            } catch (e: HttpException) {
+                val msg = if (e.code() == 404) errorNotFound else errorNoConnection
+                _state.value = UiState.Error(msg)
+            } catch (e: Exception) {
+                _state.value = UiState.Error(errorNoConnection)
+            }
+        }
+    }
+
     fun clearError() {
-        if (_state.value is UiState.Error) _state.value = UiState.Idle
+        if (_state.value is UiState.Error || _state.value is UiState.ForgotPasswordSent) {
+            _state.value = UiState.Idle
+        }
     }
 
     class Factory(

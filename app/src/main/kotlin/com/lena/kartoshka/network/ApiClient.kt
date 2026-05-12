@@ -1,7 +1,11 @@
 package com.lena.kartoshka.network
 
+import com.google.gson.Gson
 import com.lena.kartoshka.data.TokenStore
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -17,6 +21,9 @@ object ApiClient {
         tokenStore = store
     }
 
+    // Отдельный клиент без авторизации — только для рефреша токена
+    private val plainClient = OkHttpClient.Builder().build()
+
     private val http: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .addInterceptor { chain ->
@@ -29,6 +36,39 @@ object ApiClient {
                     chain.request()
                 }
                 chain.proceed(request)
+            }
+            .authenticator { _, response ->
+                // Не повторяем если уже пробовали рефреш
+                if (response.request.header("X-Retry") != null) return@authenticator null
+                if (!::tokenStore.isInitialized) return@authenticator null
+                val rt = tokenStore.refreshToken ?: return@authenticator null
+
+                val newTokens = try {
+                    val body = """{"refresh_token":"$rt"}"""
+                        .toRequestBody("application/json".toMediaType())
+                    val req = Request.Builder()
+                        .url("${BASE_URL}auth/refresh")
+                        .post(body)
+                        .build()
+                    val resp = plainClient.newCall(req).execute()
+                    if (!resp.isSuccessful) {
+                        tokenStore.clear()
+                        return@authenticator null
+                    }
+                    val json = resp.body?.string() ?: return@authenticator null
+                    Gson().fromJson(json, TokenPair::class.java)
+                } catch (e: Exception) {
+                    tokenStore.clear()
+                    return@authenticator null
+                }
+
+                tokenStore.accessToken = newTokens.access_token
+                tokenStore.refreshToken = newTokens.refresh_token
+
+                response.request.newBuilder()
+                    .header("Authorization", "Bearer ${newTokens.access_token}")
+                    .header("X-Retry", "true")
+                    .build()
             }
             .addInterceptor(
                 HttpLoggingInterceptor().apply {

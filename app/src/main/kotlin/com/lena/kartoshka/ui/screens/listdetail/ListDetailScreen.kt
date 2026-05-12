@@ -1716,10 +1716,18 @@ private fun AddItemInfoSheet(
                     }
                 )
             }
-            TextButton(onClick = onCancel) {
+            TextButton(
+                onClick = { if (nextText.isNotEmpty()) submitNext() else onCancel() }
+            ) {
                 Text(
-                    text = stringResource(R.string.cancel),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    text = if (nextText.isNotEmpty())
+                        stringResource(R.string.add_item_button)
+                    else
+                        stringResource(R.string.cancel),
+                    color = if (nextText.isNotEmpty())
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium,
                     fontSize = 16.sp
                 )

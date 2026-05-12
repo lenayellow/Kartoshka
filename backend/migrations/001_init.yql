@@ -1,0 +1,121 @@
+-- Картошка: начальная схема БД
+-- Выполнять через YDB CLI: ydb yql -s @migrations/001_init.yql
+
+-- ───────────────────────────────────────────
+-- Пользователи
+-- ───────────────────────────────────────────
+CREATE TABLE users (
+    user_id    Utf8     NOT NULL,  -- UUID
+    yandex_uid Utf8,               -- null для email-пользователей
+    email      Utf8     NOT NULL,
+    name       Utf8     NOT NULL,
+    avatar_url Utf8,               -- Yandex Object Storage URL
+    created_at Datetime NOT NULL,
+    updated_at Datetime NOT NULL,
+    PRIMARY KEY (user_id)
+);
+
+-- ───────────────────────────────────────────
+-- Списки покупок
+-- ───────────────────────────────────────────
+CREATE TABLE lists (
+    list_id           Utf8     NOT NULL,
+    owner_id          Utf8     NOT NULL,  -- → users.user_id
+    title             Utf8     NOT NULL,
+    color_value       Int64    NOT NULL,  -- ARGB Long (как в Android Color)
+    position          Int32    NOT NULL,
+    category_order    Utf8,               -- JSON: ["cat1","cat3","cat2"]
+    hidden_categories Utf8,               -- JSON: ["cat4","cat7"]
+    created_at        Datetime NOT NULL,
+    updated_at        Datetime NOT NULL,
+    PRIMARY KEY (list_id)
+);
+
+-- ───────────────────────────────────────────
+-- Участники списков
+-- ───────────────────────────────────────────
+CREATE TABLE list_members (
+    list_id   Utf8     NOT NULL,
+    user_id   Utf8     NOT NULL,
+    role      Utf8     NOT NULL,  -- 'owner' | 'editor'
+    joined_at Datetime NOT NULL,
+    PRIMARY KEY (list_id, user_id)
+);
+
+-- ───────────────────────────────────────────
+-- Товары
+-- ───────────────────────────────────────────
+CREATE TABLE items (
+    item_id     Utf8     NOT NULL,
+    list_id     Utf8     NOT NULL,
+    name        Utf8     NOT NULL,
+    tags        Utf8,              -- CSV: "URGENT,ON_SALE" (как в ItemEntity.tags)
+    note        Utf8,
+    category_id Utf8,              -- "cat1".."cat12" или null
+    photo_url   Utf8,              -- Object Storage URL (заменяет imagePath)
+    is_deleted  Bool     NOT NULL,
+    added_by    Utf8     NOT NULL,
+    updated_by  Utf8     NOT NULL,
+    updated_at  Datetime NOT NULL,
+    sort_index  Int32,
+    PRIMARY KEY (item_id)
+);
+
+CREATE INDEX idx_items_list ON TABLE items (
+    list_id, is_deleted, category_id
+);
+
+-- ───────────────────────────────────────────
+-- История покупок
+-- ───────────────────────────────────────────
+CREATE TABLE purchase_history (
+    id           Utf8     NOT NULL,
+    item_name    Utf8     NOT NULL,
+    list_id      Utf8     NOT NULL,
+    purchased_at Datetime NOT NULL,
+    user_id      Utf8     NOT NULL,
+    PRIMARY KEY (id)
+);
+
+CREATE INDEX idx_history_list ON TABLE purchase_history (
+    list_id, purchased_at
+);
+
+-- ───────────────────────────────────────────
+-- Карты лояльности (привязаны к пользователю, не к списку)
+-- ───────────────────────────────────────────
+CREATE TABLE loyalty_cards (
+    card_id        Utf8  NOT NULL,
+    user_id        Utf8  NOT NULL,  -- → users.user_id
+    name           Utf8  NOT NULL,
+    barcode_value  Utf8  NOT NULL,
+    barcode_format Int32 NOT NULL,  -- ZXing BarcodeFormat ordinal (как в LoyaltyCard.kt)
+    color          Int64 NOT NULL,  -- ARGB Long (как в LoyaltyCard.kt)
+    PRIMARY KEY (card_id)
+);
+
+-- ───────────────────────────────────────────
+-- Приглашения (ShareScreen)
+-- ───────────────────────────────────────────
+CREATE TABLE invitations (
+    invite_token  Utf8     NOT NULL,
+    list_id       Utf8     NOT NULL,
+    inviter_id    Utf8     NOT NULL,
+    invitee_email Utf8,
+    status        Utf8     NOT NULL,  -- 'pending' | 'accepted' | 'expired'
+    created_at    Datetime NOT NULL,
+    expires_at    Datetime NOT NULL,
+    PRIMARY KEY (invite_token)
+);
+
+-- ───────────────────────────────────────────
+-- Push-токены устройств
+-- ───────────────────────────────────────────
+CREATE TABLE push_tokens (
+    user_id       Utf8     NOT NULL,
+    device_id     Utf8     NOT NULL,
+    fcm_token     Utf8,
+    rustore_token Utf8,
+    updated_at    Datetime NOT NULL,
+    PRIMARY KEY (user_id, device_id)
+);

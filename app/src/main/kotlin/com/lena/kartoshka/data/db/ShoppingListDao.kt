@@ -27,6 +27,9 @@ interface ShoppingListDao {
     @Query("DELETE FROM shopping_lists WHERE id = :id")
     suspend fun deleteById(id: String)
 
+    @Query("SELECT * FROM shopping_lists")
+    suspend fun getAll(): List<ShoppingListEntity>
+
     @Query("SELECT COUNT(*) FROM shopping_lists")
     suspend fun count(): Int
 

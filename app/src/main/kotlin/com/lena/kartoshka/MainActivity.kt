@@ -1,5 +1,6 @@
 package com.lena.kartoshka
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -52,13 +53,28 @@ class MainActivity : ComponentActivity() {
         SyncRepository(ApiClient.api, KartoshkaDatabase.get(applicationContext))
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleDeepLink(intent)
+    }
+
+    private fun handleDeepLink(intent: Intent?) {
+        val uri = intent?.data ?: return
+        if (uri.scheme == "kartoshka" && uri.host == "auth") {
+            uri.getQueryParameter("code")?.let { YandexAuthBus.code.value = it }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleDeepLink(intent)
         tokenStore // triggers lazy init → ApiClient.init()
         enableEdgeToEdge()
         setContent {
             val isDarkTheme by userPrefsRepository.isDark.collectAsState()
             val avatarPath by userPrefsRepository.avatarPath.collectAsState()
+            val userName by userPrefsRepository.userName.collectAsState()
+            val userEmail by userPrefsRepository.userEmail.collectAsState()
             KartoshkaTheme(darkTheme = isDarkTheme) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val navController = rememberNavController()
@@ -71,6 +87,9 @@ class MainActivity : ComponentActivity() {
                     LaunchedEffect(Unit) {
                         if (tokenStore.isLoggedIn) {
                             syncRepository.syncLists()
+                            appRepository.getCurrentUser()?.let {
+                                userPrefsRepository.saveUserInfo(it.name, it.email)
+                            }
                         } else {
                             appRepository.seedIfEmpty()
                         }
@@ -98,7 +117,11 @@ class MainActivity : ComponentActivity() {
                             val vm: AuthViewModel = viewModel(
                                 factory = AuthViewModel.Factory(ApiClient.api, tokenStore)
                             )
-                            AuthScreen(vm = vm, onSuccess = {
+                            AuthScreen(vm = vm, onSuccess = { name, email ->
+                                if (name.isNotEmpty() || email.isNotEmpty()) {
+                                    userPrefsRepository.saveUserInfo(name, email)
+                                }
+                                scope.launch { syncRepository.syncLists() }
                                 navController.navigate("lists") {
                                     popUpTo("auth") { inclusive = true }
                                 }
@@ -136,6 +159,7 @@ class MainActivity : ComponentActivity() {
                             val listId = backStackEntry.arguments?.getString("listId") ?: return@composable
                             ShareScreen(
                                 listId = listId,
+                                api = ApiClient.api,
                                 onSkip = {
                                     navController.navigate("list/$listId") {
                                         popUpTo("lists")
@@ -165,6 +189,8 @@ class MainActivity : ComponentActivity() {
                                 onThemeChange = { userPrefsRepository.setDark(it) },
                                 avatarPath = avatarPath,
                                 onAvatarChange = { userPrefsRepository.saveAvatarPath(it) },
+                                userName = userName,
+                                userEmail = userEmail,
                                 onLogout = {
                                     scope.launch {
                                         runCatching {
@@ -172,6 +198,7 @@ class MainActivity : ComponentActivity() {
                                             if (rt != null) ApiClient.api.logout(LogoutRequest(rt))
                                         }
                                         tokenStore.clear()
+                                        userPrefsRepository.clearUserInfo()
                                         navController.navigate("auth") {
                                             popUpTo(0) { inclusive = true }
                                         }

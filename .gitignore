@@ -66,3 +66,14 @@ desktop.ini
 backend/api.exe
 backend/api.exe~
 backend/response.json
+
+# Secrets — NEVER commit
+backend/.env
+backend/sa_key.json
+*.env
+!*.env.example
+
+# Local tooling / runtime distributions
+python-*.exe
+ydb-*/
+*.exe

@@ -173,6 +173,116 @@ func (h *AuthHandler) ConfirmEmail(w http.ResponseWriter, r *http.Request) {
 </body></html>`)
 }
 
+// POST /auth/email/forgot — запрос письма для сброса пароля
+func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Email == "" {
+		http.Error(w, "поле email обязательно", http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.users.GetByEmail(r.Context(), req.Email)
+	if err != nil {
+		http.Error(w, "ошибка базы данных", http.StatusInternalServerError)
+		return
+	}
+	if user == nil || user.PasswordHash == "" {
+		http.Error(w, "аккаунт с таким email не найден", http.StatusNotFound)
+		return
+	}
+
+	token, err := auth.GenerateResetToken(user.UserID)
+	if err != nil {
+		http.Error(w, "ошибка генерации токена", http.StatusInternalServerError)
+		return
+	}
+
+	baseURL := os.Getenv("APP_BASE_URL")
+	resetURL := baseURL + "/auth/email/reset?token=" + token
+
+	go func() {
+		if err := notifications.SendResetEmail(user.Email, user.Name, resetURL); err != nil {
+			fmt.Printf("reset email error: %v\n", err)
+		}
+	}()
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// GET /auth/email/reset?token=... — HTML-форма ввода нового пароля
+func (h *AuthHandler) ResetPasswordForm(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("token")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if token == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `<html><body style="font-family:sans-serif;text-align:center;padding:60px"><h2>Ссылка недействительна</h2></body></html>`)
+		return
+	}
+	if _, err := auth.ParseResetToken(token); err != nil {
+		fmt.Fprint(w, `<html><body style="font-family:sans-serif;text-align:center;padding:60px">
+<h2>Ссылка устарела</h2>
+<p>Запросите сброс пароля ещё раз в приложении.</p>
+</body></html>`)
+		return
+	}
+	fmt.Fprintf(w, `<html><body style="font-family:sans-serif;max-width:400px;margin:60px auto;padding:0 20px">
+<h2>Новый пароль</h2>
+<form method="POST" action="/auth/email/reset">
+  <input type="hidden" name="token" value="%s">
+  <input type="password" name="password" placeholder="Новый пароль (мин. 8 символов)"
+         style="width:100%%;padding:12px;margin:12px 0;box-sizing:border-box;font-size:16px;border:1px solid #ccc;border-radius:6px">
+  <button type="submit" style="background:#4CAF50;color:white;padding:12px 24px;border:none;border-radius:6px;font-size:16px;cursor:pointer;width:100%%">
+    Сохранить пароль
+  </button>
+</form>
+</body></html>`, token)
+}
+
+// POST /auth/email/reset — сохранение нового пароля (из HTML-формы)
+func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "неверный запрос", http.StatusBadRequest)
+		return
+	}
+	token := r.FormValue("token")
+	password := r.FormValue("password")
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if token == "" || len(password) < 8 {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `<html><body style="font-family:sans-serif;text-align:center;padding:60px">
+<h2>Ошибка</h2><p>Пароль должен быть не менее 8 символов.</p>
+</body></html>`)
+		return
+	}
+
+	userID, err := auth.ParseResetToken(token)
+	if err != nil {
+		fmt.Fprint(w, `<html><body style="font-family:sans-serif;text-align:center;padding:60px">
+<h2>Ссылка устарела</h2>
+<p>Запросите сброс пароля ещё раз в приложении.</p>
+</body></html>`)
+		return
+	}
+
+	hash, err := auth.HashPassword(password)
+	if err != nil {
+		http.Error(w, "ошибка хеширования", http.StatusInternalServerError)
+		return
+	}
+	if err := h.users.SetPasswordHash(r.Context(), userID, hash); err != nil {
+		http.Error(w, "ошибка сохранения пароля", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprint(w, `<html><body style="font-family:sans-serif;text-align:center;padding:60px">
+<h2>Пароль обновлён!</h2>
+<p>Вернитесь в приложение и войдите с новым паролем.</p>
+</body></html>`)
+}
+
 // POST /auth/refresh — обновление access token по refresh token
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	var req struct {

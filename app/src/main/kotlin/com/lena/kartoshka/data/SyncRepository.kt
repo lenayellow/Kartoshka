@@ -11,8 +11,11 @@ class SyncRepository(
 ) {
 
     suspend fun syncLists(): Result<Unit> = runCatching {
-        val lists = api.getLists()
-        lists.forEach { apiList ->
+        val serverLists = api.getLists()
+        val serverIds = serverLists.map { it.list_id }.toSet()
+
+        // Скачиваем серверные списки в локальную БД
+        serverLists.forEach { apiList ->
             db.shoppingListDao().insert(
                 ShoppingListEntity(
                     id = apiList.list_id,
@@ -21,6 +24,21 @@ class SyncRepository(
                     position = apiList.position
                 )
             )
+        }
+
+        // Загружаем локальные списки которых нет на сервере
+        val localLists = db.shoppingListDao().getAll()
+        localLists.filter { it.id !in serverIds }.forEach { local ->
+            runCatching {
+                api.createList(
+                    com.lena.kartoshka.network.CreateListRequest(
+                        list_id = local.id,
+                        title = local.name,
+                        color_value = local.colorValue,
+                        position = local.position
+                    )
+                )
+            }
         }
     }
 

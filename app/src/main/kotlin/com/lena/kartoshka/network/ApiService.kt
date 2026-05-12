@@ -17,6 +17,12 @@ interface ApiService {
     @POST("auth/logout")
     suspend fun logout(@Body body: LogoutRequest)
 
+    @POST("auth/email/forgot")
+    suspend fun forgotPassword(@Body body: ForgotPasswordRequest)
+
+    @POST("auth/yandex")
+    suspend fun loginYandex(@Body body: YandexLoginRequest): TokenPair
+
     // User
     @GET("users/me")
     suspend fun getMe(): UserResponse
