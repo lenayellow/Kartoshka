@@ -1,22 +1,22 @@
 @echo off
 setlocal
 
-REM === Супер Списки — dev launcher ===
-REM   1. Останавливает старый бэкенд на :8080
-REM   2. Собирает Go-бэкенд
-REM   3. Ставит adb reverse tcp:8080 tcp:8080 (чтобы телефон видел localhost)
-REM   4. Запускает бэкенд в этом окне. Закрой окно или Ctrl+C — бэкенд остановится.
+REM === Kartoshka dev launcher ===
+REM   1. Kills old backend on :8080
+REM   2. Builds Go backend
+REM   3. Sets adb reverse tcp:8080 tcp:8080 (phone sees localhost)
+REM   4. Starts backend in this window. Close window or Ctrl+C to stop.
 
 cd /d "%~dp0"
 
-echo === Останавливаю старый процесс на :8080 ===
+echo === Stopping old process on :8080 ===
 for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":8080.*LISTENING" 2^>nul') do (
     echo Stopping PID %%a
     taskkill /F /PID %%a >nul 2>nul
 )
 
 echo.
-echo === Сборка бэкенда ===
+echo === Building backend ===
 pushd backend
 go build -o api.exe ./cmd/api
 if errorlevel 1 (
@@ -35,16 +35,16 @@ if not defined ADB (
     if exist "%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe" set "ADB=%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe"
 )
 if not defined ADB (
-    echo WARNING: adb не найден. Пропускаю reverse-туннель.
-    echo Если тестируешь на телефоне — установи Android Studio или добавь adb в PATH.
+    echo WARNING: adb not found. Skipping reverse tunnel.
+    echo If testing on phone -- install Android Studio or add adb to PATH.
 ) else (
     "%ADB%" reverse tcp:8080 tcp:8080
     "%ADB%" reverse --list
 )
 
 echo.
-echo === Запускаю бэкенд на :8080 ===
-echo Чтобы остановить — закрой это окно или нажми Ctrl+C.
+echo === Starting backend on :8080 ===
+echo Close this window or press Ctrl+C to stop.
 echo.
 cd backend
 api.exe
