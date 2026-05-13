@@ -1,6 +1,7 @@
 package com.lena.kartoshka.network
 
 import com.google.gson.Gson
+import com.lena.kartoshka.BuildConfig
 import com.lena.kartoshka.data.TokenStore
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -8,12 +9,10 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import java.util.concurrent.TimeUnit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object ApiClient {
-
-    // adb reverse tcp:8080 tcp:8080 tunnels this to the host machine's localhost
-    const val BASE_URL = "http://localhost:8080/"
 
     private lateinit var tokenStore: TokenStore
 
@@ -26,6 +25,10 @@ object ApiClient {
 
     private val http: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .callTimeout(60, TimeUnit.SECONDS)
             .addInterceptor { chain ->
                 val token = if (::tokenStore.isInitialized) tokenStore.accessToken else null
                 val request = if (token != null) {
@@ -47,7 +50,7 @@ object ApiClient {
                     val body = """{"refresh_token":"$rt"}"""
                         .toRequestBody("application/json".toMediaType())
                     val req = Request.Builder()
-                        .url("${BASE_URL}auth/refresh")
+                        .url("${BuildConfig.API_BASE_URL}auth/refresh")
                         .post(body)
                         .build()
                     val resp = plainClient.newCall(req).execute()
@@ -70,17 +73,22 @@ object ApiClient {
                     .header("X-Retry", "true")
                     .build()
             }
-            .addInterceptor(
-                HttpLoggingInterceptor().apply {
-                    level = HttpLoggingInterceptor.Level.BODY
+            .apply {
+                if (BuildConfig.DEBUG) {
+                    val logging = HttpLoggingInterceptor().apply {
+                        level = HttpLoggingInterceptor.Level.BODY
+                        redactHeader("Authorization")
+                        redactHeader("Cookie")
+                    }
+                    addInterceptor(logging)
                 }
-            )
+            }
             .build()
     }
 
     val api: ApiService by lazy {
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(BuildConfig.API_BASE_URL)
             .client(http)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

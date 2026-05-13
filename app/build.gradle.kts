@@ -75,6 +75,11 @@ android {
             "String", "APPMETRICA_API_KEY",
             "\"${localProps.getProperty("APPMETRICA_API_KEY", "")}\""
         )
+        // Release URL — replace CLOUD_FUNCTION_PLACEHOLDER before deploying to production (Sprint 5)
+        buildConfigField(
+            "String", "API_BASE_URL",
+            "\"https://CLOUD_FUNCTION_PLACEHOLDER.apigw.yandexcloud.net/\""
+        )
     }
 
     signingConfigs {
@@ -89,6 +94,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            // localhost works via adb reverse tunnel (USB); for emulator use 10.0.2.2 instead
+            buildConfigField("String", "API_BASE_URL", "\"http://localhost:8080/\"")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true

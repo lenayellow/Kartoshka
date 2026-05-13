@@ -16,6 +16,8 @@ APPMETRICA_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 Без ключа крэш-репортинг просто не включится — приложение продолжит работать.
 
+> ⚠️ **ВНИМАНИЕ:** перед сборкой production-релиза замени `CLOUD_FUNCTION_PLACEHOLDER` в `app/build.gradle.kts` (поле `API_BASE_URL` в `defaultConfig`) на реальный URL развёрнутой Cloud Function.
+
 ### 2. Подготовь keystore
 
 Скопируй шаблон и заполни значения:
