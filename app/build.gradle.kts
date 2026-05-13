@@ -1,9 +1,30 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.ksp)
 }
+
+// Signing config resolution priority:
+//   1. Env vars KEYSTORE_PATH / KEYSTORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD  (CI)
+//   2. keystore.properties in project root  (local dev)
+//   3. Nothing — debug builds continue normally; release tasks fail with a clear message
+val keystoreProps = Properties().also { props ->
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) props.load(f.inputStream())
+}
+
+val ksStorePath: String? =
+    System.getenv("KEYSTORE_PATH")
+        ?: keystoreProps.getProperty("storeFile")?.takeIf { it.isNotEmpty() }
+val ksStorePassword: String? =
+    System.getenv("KEYSTORE_PASSWORD") ?: keystoreProps.getProperty("storePassword")
+val ksKeyAlias: String? =
+    System.getenv("KEY_ALIAS") ?: keystoreProps.getProperty("keyAlias")
+val ksKeyPassword: String? =
+    System.getenv("KEY_PASSWORD") ?: keystoreProps.getProperty("keyPassword")
 
 android {
     namespace = "com.lena.kartoshka"
@@ -17,13 +38,28 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        create("release") {
+            if (ksStorePath != null) {
+                storeFile = rootProject.file(ksStorePath)
+                storePassword = ksStorePassword
+                keyAlias = ksKeyAlias
+                keyPassword = ksKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            if (ksStorePath != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
@@ -38,6 +74,17 @@ android {
 
     buildFeatures {
         compose = true
+    }
+}
+
+// Fail fast with a human-readable message if release is built without signing config
+tasks.matching { it.name == "assembleRelease" || it.name == "bundleRelease" }.configureEach {
+    doFirst {
+        check(ksStorePath != null) {
+            "Release signing not configured.\n" +
+            "Set env vars KEYSTORE_PATH / KEYSTORE_PASSWORD / KEY_ALIAS / KEY_PASSWORD,\n" +
+            "or create keystore.properties in the project root (see keystore.properties.example)."
+        }
     }
 }
 

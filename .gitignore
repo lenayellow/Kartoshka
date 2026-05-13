@@ -72,6 +72,7 @@ backend/.env
 backend/sa_key.json
 *.env
 !*.env.example
+keystore.properties
 
 # Local tooling / runtime distributions
 python-*.exe
