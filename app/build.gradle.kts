@@ -26,6 +26,20 @@ val ksKeyAlias: String? =
 val ksKeyPassword: String? =
     System.getenv("KEY_PASSWORD") ?: keystoreProps.getProperty("keyPassword")
 
+// Auto-versioning from git.
+// versionCode  = total commit count (increases automatically with every commit)
+// versionName  = nearest git tag (e.g. "1.2"), or "1.2-5-gabcdef" between releases.
+//                Tag a release commit as "1.0", "1.1", "2.0" — no "v" prefix needed.
+fun git(vararg args: String): String = try {
+    ProcessBuilder("git", *args)
+        .directory(rootProject.projectDir)
+        .start()
+        .inputStream.bufferedReader().readText().trim()
+} catch (_: Exception) { "" }
+
+val gitCommitCount: Int = git("rev-list", "--count", "HEAD").toIntOrNull() ?: 1
+val gitVersionName: String = git("describe", "--tags", "--always").ifEmpty { gitCommitCount.toString() }
+
 android {
     namespace = "com.lena.kartoshka"
     compileSdk = 34
@@ -34,8 +48,8 @@ android {
         applicationId = "com.lena.kartoshka"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = gitCommitCount
+        versionName = gitVersionName
     }
 
     signingConfigs {
