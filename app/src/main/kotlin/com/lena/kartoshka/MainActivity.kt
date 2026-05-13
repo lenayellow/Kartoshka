@@ -21,6 +21,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.lena.kartoshka.analytics.Analytics
 import com.lena.kartoshka.data.AppRepository
 import com.lena.kartoshka.data.LastUsedRepository
 import com.lena.kartoshka.data.SyncRepository
@@ -197,6 +198,7 @@ class MainActivity : ComponentActivity() {
                                             val rt = tokenStore.refreshToken
                                             if (rt != null) ApiClient.api.logout(LogoutRequest(rt))
                                         }
+                                        Analytics.setUserId(null)
                                         tokenStore.clear()
                                         userPrefsRepository.clearUserInfo()
                                         navController.navigate("auth") {

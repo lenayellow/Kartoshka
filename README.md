@@ -4,7 +4,19 @@
 
 ## Сборка release-версии
 
-### 1. Подготовь keystore
+### 1. Получи API-ключ AppMetrica
+
+Зарегистрируйся на [appmetrica.yandex.ru](https://appmetrica.yandex.ru), создай приложение и скопируй API-ключ.
+
+Пропиши в `local.properties` (файл в .gitignore, не коммитится):
+
+```
+APPMETRICA_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
+Без ключа крэш-репортинг просто не включится — приложение продолжит работать.
+
+### 2. Подготовь keystore
 
 Скопируй шаблон и заполни значения:
 

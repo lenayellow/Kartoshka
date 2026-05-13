@@ -16,6 +16,11 @@ val keystoreProps = Properties().also { props ->
     if (f.exists()) props.load(f.inputStream())
 }
 
+val localProps = Properties().also { props ->
+    val f = rootProject.file("local.properties")
+    if (f.exists()) props.load(f.inputStream())
+}
+
 val ksStorePath: String? =
     System.getenv("KEYSTORE_PATH")
         ?: keystoreProps.getProperty("storeFile")?.takeIf { it.isNotEmpty() }
@@ -66,6 +71,10 @@ android {
         targetSdk = 34
         versionCode = computedVersionCode
         versionName = computedVersionName
+        buildConfigField(
+            "String", "APPMETRICA_API_KEY",
+            "\"${localProps.getProperty("APPMETRICA_API_KEY", "")}\""
+        )
     }
 
     signingConfigs {
@@ -104,6 +113,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -146,6 +156,9 @@ dependencies {
 
     // Drag-and-drop reordering
     implementation(libs.reorderable)
+
+    // AppMetrica — crash reporting and analytics
+    implementation(libs.appmetrica.analytics)
 
     // ZXing — barcode rendering
     implementation("com.google.zxing:core:3.5.3")

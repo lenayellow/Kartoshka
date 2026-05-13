@@ -6,6 +6,7 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
+        android:name=".KartoshkaApp"
         android:allowBackup="true"
         android:label="@string/app_name"
         android:supportsRtl="true"
