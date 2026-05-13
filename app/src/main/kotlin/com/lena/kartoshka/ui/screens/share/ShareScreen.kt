@@ -23,12 +23,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -201,12 +201,12 @@ fun ShareScreen(
                         backgroundColor = Color(0xFF25D366)
                     )
                     ShareButton(
-                        icon = Icons.Filled.Send,
+                        icon = Icons.AutoMirrored.Filled.Send,
                         label = stringResource(R.string.share_sms),
                         backgroundColor = Color(0xFF2196F3)
                     )
                     ShareButton(
-                        icon = Icons.Filled.Chat,
+                        icon = Icons.AutoMirrored.Filled.Chat,
                         label = stringResource(R.string.share_other),
                         backgroundColor = Color(0xFF404050)
                     )

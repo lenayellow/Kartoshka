@@ -32,7 +32,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LocalDining
-import androidx.compose.material.icons.filled.PlaylistAdd
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
@@ -339,7 +339,7 @@ private fun RecipeCard(
         Row(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
             CardAction(icon = Icons.Filled.Link, label = stringResource(R.string.ideas_view), modifier = Modifier.weight(1f), onClick = {})
             CardAction(icon = Icons.Filled.Share, label = stringResource(R.string.ideas_share), modifier = Modifier.weight(1f), onClick = shareRecipe)
-            CardAction(icon = Icons.Filled.PlaylistAdd, label = stringResource(R.string.ideas_add_to_list), modifier = Modifier.weight(1f), onClick = onQuickAdd)
+            CardAction(icon = Icons.AutoMirrored.Filled.PlaylistAdd, label = stringResource(R.string.ideas_add_to_list), modifier = Modifier.weight(1f), onClick = onQuickAdd)
         }
     }
     HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
