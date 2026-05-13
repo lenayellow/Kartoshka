@@ -3,6 +3,7 @@ package com.lena.kartoshka
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -110,6 +111,33 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
+                    LaunchedEffect(Unit) {
+                        tokenStore.logoutEvents.collect { reason ->
+                            when (reason) {
+                                TokenStore.LogoutReason.SESSION_EXPIRED -> {
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        this@MainActivity.getString(R.string.error_session_expired),
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                    Analytics.trackEvent(
+                                        "force_logout",
+                                        mapOf("reason" to reason.name)
+                                    )
+                                    navController.navigate("auth") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
+                                TokenStore.LogoutReason.USER_INITIATED -> {
+                                    Analytics.trackEvent(
+                                        "force_logout",
+                                        mapOf("reason" to reason.name)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     NavHost(
                         navController = navController,
                         startDestination = if (tokenStore.isLoggedIn) "lists" else "auth"
@@ -199,7 +227,7 @@ class MainActivity : ComponentActivity() {
                                             if (rt != null) ApiClient.api.logout(LogoutRequest(rt))
                                         }
                                         Analytics.setUserId(null)
-                                        tokenStore.clear()
+                                        tokenStore.clearWithReason(TokenStore.LogoutReason.USER_INITIATED)
                                         userPrefsRepository.clearUserInfo()
                                         navController.navigate("auth") {
                                             popUpTo(0) { inclusive = true }

@@ -55,13 +55,13 @@ object ApiClient {
                         .build()
                     val resp = plainClient.newCall(req).execute()
                     if (!resp.isSuccessful) {
-                        tokenStore.clear()
+                        tokenStore.clearWithReason(TokenStore.LogoutReason.SESSION_EXPIRED)
                         return@authenticator null
                     }
                     val json = resp.body?.string() ?: return@authenticator null
                     Gson().fromJson(json, TokenPair::class.java)
                 } catch (e: Exception) {
-                    tokenStore.clear()
+                    tokenStore.clearWithReason(TokenStore.LogoutReason.SESSION_EXPIRED)
                     return@authenticator null
                 }
 
