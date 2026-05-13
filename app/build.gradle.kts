@@ -26,19 +26,35 @@ val ksKeyAlias: String? =
 val ksKeyPassword: String? =
     System.getenv("KEY_PASSWORD") ?: keystoreProps.getProperty("keyPassword")
 
-// Auto-versioning from git.
-// versionCode  = total commit count (increases automatically with every commit)
-// versionName  = nearest git tag (e.g. "1.2"), or "1.2-5-gabcdef" between releases.
-//                Tag a release commit as "1.0", "1.1", "2.0" — no "v" prefix needed.
-fun git(vararg args: String): String = try {
-    ProcessBuilder("git", *args)
-        .directory(rootProject.projectDir)
-        .start()
-        .inputStream.bufferedReader().readText().trim()
+// ── Versioning ────────────────────────────────────────────────────────────────
+// versionCode  : git rev-list --count HEAD  →  1 (fallback)
+// versionName  : nearest git tag vX.Y.Z → X.Y.Z  →  VERSION file  →  "0.1.0-dev"
+// Tag releases as "v1.0.0", "v1.2.3", etc.
+
+fun gitExec(vararg args: String): String = try {
+    providers.exec {
+        commandLine("git", *args)
+        isIgnoreExitValue = true
+    }.standardOutput.asText.get().trim()
 } catch (_: Exception) { "" }
 
-val gitCommitCount: Int = git("rev-list", "--count", "HEAD").toIntOrNull() ?: 1
-val gitVersionName: String = git("describe", "--tags", "--always").ifEmpty { gitCommitCount.toString() }
+val versionFallback: String =
+    rootProject.file("VERSION").takeIf { it.exists() }?.readText()?.trim() ?: "0.1.0-dev"
+
+val gitAvailable: Boolean = gitExec("rev-parse", "--git-dir").isNotEmpty()
+
+val computedVersionCode: Int =
+    if (gitAvailable) gitExec("rev-list", "--count", "HEAD").toIntOrNull() ?: 1
+    else { logger.warn("[version] git not available — using versionCode=1"); 1 }
+
+val computedVersionName: String =
+    if (gitAvailable)
+        gitExec("describe", "--tags", "--abbrev=0", "--match", "v*")
+            .removePrefix("v")
+            .ifEmpty { versionFallback }
+    else versionFallback
+
+logger.lifecycle("[version] versionCode=$computedVersionCode  versionName=$computedVersionName")
 
 android {
     namespace = "com.lena.kartoshka"
@@ -48,8 +64,8 @@ android {
         applicationId = "com.lena.kartoshka"
         minSdk = 26
         targetSdk = 34
-        versionCode = gitCommitCount
-        versionName = gitVersionName
+        versionCode = computedVersionCode
+        versionName = computedVersionName
     }
 
     signingConfigs {
