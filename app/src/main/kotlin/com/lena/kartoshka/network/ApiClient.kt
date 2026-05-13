@@ -75,8 +75,9 @@ object ApiClient {
             }
             .apply {
                 if (BuildConfig.DEBUG) {
+                    addInterceptor(SensitiveBodyLoggingInterceptor())
                     val logging = HttpLoggingInterceptor().apply {
-                        level = HttpLoggingInterceptor.Level.BODY
+                        level = HttpLoggingInterceptor.Level.HEADERS
                         redactHeader("Authorization")
                         redactHeader("Cookie")
                     }

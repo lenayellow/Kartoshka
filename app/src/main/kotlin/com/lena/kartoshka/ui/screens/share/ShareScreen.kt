@@ -56,8 +56,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.lena.kartoshka.R
+import com.lena.kartoshka.analytics.Analytics
 import com.lena.kartoshka.network.ApiService
 import com.lena.kartoshka.network.CreateInviteRequest
+import com.lena.kartoshka.network.Feature
+import com.lena.kartoshka.network.NetworkError
+import com.lena.kartoshka.network.toNetworkError
+import com.lena.kartoshka.network.toUserMessage
 import kotlinx.coroutines.launch
 
 @Composable
@@ -84,7 +89,14 @@ fun ShareScreen(
                 inviteLink = resp.web_link
                 inviteSent = true
             } catch (e: Exception) {
-                errorMsg = context.getString(R.string.auth_error_no_connection)
+                val networkError = e.toNetworkError()
+                val analyticsMsg = if (networkError is NetworkError.Conflict) {
+                    "ShareScreen.sendInvite Conflict serverMessage='${networkError.serverMessage}'"
+                } else {
+                    "ShareScreen.sendInvite: ${networkError::class.simpleName} code=${networkError.httpCode}"
+                }
+                Analytics.trackError(e, analyticsMsg)
+                errorMsg = networkError.toUserMessage(context, Feature.Share)
             } finally {
                 isLoading = false
             }

@@ -1,6 +1,7 @@
 package com.lena.kartoshka.data
 
 import androidx.compose.ui.graphics.Color
+import com.lena.kartoshka.analytics.Analytics
 import com.lena.kartoshka.data.db.ItemEntity
 import com.lena.kartoshka.data.db.KartoshkaDatabase
 import com.lena.kartoshka.data.db.PurchaseHistoryEntity
@@ -12,6 +13,7 @@ import com.lena.kartoshka.network.CreateItemRequest
 import com.lena.kartoshka.network.CreateListRequest
 import com.lena.kartoshka.network.UpdateItemRequest
 import com.lena.kartoshka.network.UpdateListRequest
+import com.lena.kartoshka.network.toNetworkError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -35,21 +37,36 @@ class AppRepository(
         db.shoppingListDao().insert(
             ShoppingListEntity(list.id, list.name, list.color.value.toLong(), position)
         )
-        api?.let { api -> bgScope.launch { runCatching {
-            api.createList(CreateListRequest(list.id, list.name, list.color.value.toLong(), position))
-        }}}
+        api?.let { api -> bgScope.launch {
+            runCatching {
+                api.createList(CreateListRequest(list.id, list.name, list.color.value.toLong(), position))
+            }.onFailure { e ->
+                val err = e.toNetworkError()
+                Analytics.trackError(e, "AppRepository.insertList: ${err::class.simpleName} code=${err.httpCode}")
+            }
+        }}
     }
 
     suspend fun updateList(list: ShoppingList) {
         db.shoppingListDao().update(list.id, list.name, list.color.value.toLong())
-        api?.let { api -> bgScope.launch { runCatching {
-            api.updateList(list.id, UpdateListRequest(list.name, list.color.value.toLong()))
-        }}}
+        api?.let { api -> bgScope.launch {
+            runCatching {
+                api.updateList(list.id, UpdateListRequest(list.name, list.color.value.toLong()))
+            }.onFailure { e ->
+                val err = e.toNetworkError()
+                Analytics.trackError(e, "AppRepository.updateList: ${err::class.simpleName} code=${err.httpCode}")
+            }
+        }}
     }
 
     suspend fun deleteList(id: String) {
         db.shoppingListDao().deleteById(id)
-        api?.let { api -> bgScope.launch { runCatching { api.deleteList(id) } } }
+        api?.let { api -> bgScope.launch {
+            runCatching { api.deleteList(id) }.onFailure { e ->
+                val err = e.toNetworkError()
+                Analytics.trackError(e, "AppRepository.deleteList: ${err::class.simpleName} code=${err.httpCode}")
+            }
+        }}
     }
 
     // --- Items ---
@@ -59,45 +76,65 @@ class AppRepository(
 
     suspend fun insertItem(item: Item, listId: String) {
         db.itemDao().insert(item.toEntity(listId))
-        api?.let { api -> bgScope.launch { runCatching {
-            api.createItem(listId, CreateItemRequest(
-                name = item.name,
-                tags = item.tags.joinToString(",") { it.name },
-                note = item.note,
-                category_id = item.categoryId ?: ""
-            ))
-        }}}
+        api?.let { api -> bgScope.launch {
+            runCatching {
+                api.createItem(listId, CreateItemRequest(
+                    name = item.name,
+                    tags = item.tags.joinToString(",") { it.name },
+                    note = item.note,
+                    category_id = item.categoryId ?: ""
+                ))
+            }.onFailure { e ->
+                val err = e.toNetworkError()
+                Analytics.trackError(e, "AppRepository.insertItem: ${err::class.simpleName} code=${err.httpCode}")
+            }
+        }}
     }
 
     suspend fun insertItems(listId: String, items: List<Item>) {
         db.itemDao().insertAll(items.map { it.toEntity(listId) })
-        api?.let { api -> bgScope.launch { items.forEach { item -> runCatching {
-            api.createItem(listId, CreateItemRequest(
-                name = item.name,
-                tags = item.tags.joinToString(",") { it.name },
-                note = item.note,
-                category_id = item.categoryId ?: ""
-            ))
-        }}}}
+        api?.let { api -> bgScope.launch {
+            items.forEach { item ->
+                runCatching {
+                    api.createItem(listId, CreateItemRequest(
+                        name = item.name,
+                        tags = item.tags.joinToString(",") { it.name },
+                        note = item.note,
+                        category_id = item.categoryId ?: ""
+                    ))
+                }.onFailure { e ->
+                    val err = e.toNetworkError()
+                    Analytics.trackError(e, "AppRepository.insertItems: ${err::class.simpleName} code=${err.httpCode}")
+                }
+            }
+        }}
     }
 
     suspend fun updateItem(item: Item, listId: String) {
         db.itemDao().update(item.toEntity(listId))
-        api?.let { api -> bgScope.launch { runCatching {
-            api.updateItem(listId, item.id, UpdateItemRequest(
-                name = item.name,
-                tags = item.tags.joinToString(",") { it.name },
-                note = item.note,
-                category_id = item.categoryId ?: ""
-            ))
-        }}}
+        api?.let { api -> bgScope.launch {
+            runCatching {
+                api.updateItem(listId, item.id, UpdateItemRequest(
+                    name = item.name,
+                    tags = item.tags.joinToString(",") { it.name },
+                    note = item.note,
+                    category_id = item.categoryId ?: ""
+                ))
+            }.onFailure { e ->
+                val err = e.toNetworkError()
+                Analytics.trackError(e, "AppRepository.updateItem: ${err::class.simpleName} code=${err.httpCode}")
+            }
+        }}
     }
 
     suspend fun deleteItem(itemId: String) {
         val entity = db.itemDao().getById(itemId)
         db.itemDao().deleteById(itemId)
         api?.let { api -> entity?.let { e -> bgScope.launch {
-            runCatching { api.deleteItem(e.listId, itemId) }
+            runCatching { api.deleteItem(e.listId, itemId) }.onFailure { ex ->
+                val err = ex.toNetworkError()
+                Analytics.trackError(ex, "AppRepository.deleteItem: ${err::class.simpleName} code=${err.httpCode}")
+            }
         }}}
     }
 
@@ -106,9 +143,19 @@ class AppRepository(
         db.itemDao().deleteById(item.id)
         db.itemDao().insert(item.toEntity(toListId))
         api?.let { api -> bgScope.launch {
-            fromListId?.let { runCatching { api.deleteItem(it, item.id) } }
-            runCatching { api.createItem(toListId, CreateItemRequest(item.name,
-                item.tags.joinToString(",") { it.name }, item.note, item.categoryId ?: "")) }
+            fromListId?.let {
+                runCatching { api.deleteItem(it, item.id) }.onFailure { e ->
+                    val err = e.toNetworkError()
+                    Analytics.trackError(e, "AppRepository.moveItem.delete: ${err::class.simpleName} code=${err.httpCode}")
+                }
+            }
+            runCatching {
+                api.createItem(toListId, CreateItemRequest(item.name,
+                    item.tags.joinToString(",") { it.name }, item.note, item.categoryId ?: ""))
+            }.onFailure { e ->
+                val err = e.toNetworkError()
+                Analytics.trackError(e, "AppRepository.moveItem.create: ${err::class.simpleName} code=${err.httpCode}")
+            }
         }}
     }
 
@@ -142,16 +189,25 @@ class AppRepository(
             api?.getMembers(listId)?.map {
                 ListMember(it.user_id, it.name, it.email, it.avatar_url, it.role)
             }
+        }.onFailure { e ->
+            val err = e.toNetworkError()
+            Analytics.trackError(e, "AppRepository.getMembers: ${err::class.simpleName} code=${err.httpCode}")
         }.getOrNull() ?: emptyList()
 
     suspend fun removeMember(listId: String, userId: String) {
-        runCatching { api?.removeMember(listId, userId) }
+        runCatching { api?.removeMember(listId, userId) }.onFailure { e ->
+            val err = e.toNetworkError()
+            Analytics.trackError(e, "AppRepository.removeMember: ${err::class.simpleName} code=${err.httpCode}")
+        }
     }
 
     suspend fun createInvite(listId: String, email: String = ""): InviteResult? =
         runCatching {
             val resp = api?.createInvite(listId, CreateInviteRequest(email)) ?: return@runCatching null
             InviteResult(resp.web_link, resp.deep_link, resp.email_sent)
+        }.onFailure { e ->
+            val err = e.toNetworkError()
+            Analytics.trackError(e, "AppRepository.createInvite: ${err::class.simpleName} code=${err.httpCode}")
         }.getOrNull()
 
     // --- Current user ---

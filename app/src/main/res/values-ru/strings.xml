@@ -147,6 +147,24 @@
     <string name="share_error">Не получилось. Проверьте подключение к серверу.</string>
     <string name="share_email_failed_link_copied">Письмо не доставлено — ссылка-приглашение скопирована в буфер обмена. Отправьте её вручную.</string>
 
+    <!-- Generic errors -->
+    <string name="error_no_connection">Нет интернета. Проверьте соединение.</string>
+    <string name="error_server_unavailable">Сервер временно недоступен. Попробуйте позже.</string>
+    <string name="error_session_expired">Сессия истекла. Войдите снова.</string>
+    <string name="error_too_many_requests">Слишком много запросов. Подождите немного.</string>
+    <string name="error_unknown">Что-то пошло не так. Попробуйте ещё раз.</string>
+    <!-- Share errors (specific) -->
+    <string name="share_error_no_connection">Нет интернета. Приглашение не отправлено.</string>
+    <string name="share_error_user_not_found">Пользователь с таким email не зарегистрирован.</string>
+    <string name="share_error_already_invited">Этот пользователь уже приглашён.</string>
+    <string name="share_error_already_member">Этот пользователь уже участник списка.</string>
+    <string name="share_error_self_invite">Нельзя пригласить самого себя.</string>
+    <string name="share_error_server">Сервер временно недоступен. Попробуйте позже.</string>
+    <!-- Items errors -->
+    <string name="items_error_create_failed">Не удалось добавить товар. Попробуйте ещё раз.</string>
+    <string name="items_error_update_failed">Не удалось обновить товар.</string>
+    <string name="items_error_delete_failed">Не удалось удалить товар.</string>
+
     <!-- Auth screen -->
     <string name="auth_login_tab">Войти</string>
     <string name="auth_register_tab">Создать аккаунт</string>
