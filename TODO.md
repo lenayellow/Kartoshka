@@ -1,3 +1,25 @@
+## Sprint 5 — Backend
+
+### Go-тесты
+Сейчас 0 тестов, 0% покрытие. Написать юнит-тесты для auth (JWT, bcrypt),
+handlers (через httptest), repository (интеграционные с YDB).
+
+### CORS middleware
+Нужен для веб-клиента и landing-страницы приглашений (`/invite/{token}`).
+Добавить `github.com/go-chi/cors` или собственный middleware в middleware-цепочку.
+
+### Rate Limiting middleware
+- 60 req/min на `user_id` для аутентифицированных endpoint'ов
+- 10 req/min на IP для публичных endpoint'ов (`/auth/*`, `/invite/*`)
+
+### Yandex Cloud Functions деплой
+Бэкенд сейчас работает только локально. Нужно:
+- `serverless.yaml` с описанием функций
+- Entrypoint-обёртка `func Handler(ctx, event)` поверх chi-роутера
+- `deploy.sh` / `deploy.bat` скрипт через `yc` CLI
+
+---
+
 ## Sprint 5 — Backend validation bugs
 
 ### 1. POST /lists/{id}/invite не валидирует invitee_email

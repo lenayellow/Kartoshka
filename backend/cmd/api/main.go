@@ -70,6 +70,7 @@ func main() {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logging(logger))
 	r.Use(middleware.Recovery(logger))
+	r.Use(middleware.RequestTimeout(25 * time.Second))
 
 	// Auth
 	r.Post("/auth/yandex", authHandler.YandexLogin)

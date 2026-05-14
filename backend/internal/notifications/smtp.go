@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/smtp"
 	"os"
+	"time"
 )
 
 func SendResetEmail(to, name, resetURL string) error {
@@ -42,15 +43,16 @@ func SendEmail(to, subject, htmlBody string) error {
 		return fmt.Errorf("SMTP не настроен (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS)")
 	}
 
-	// Порт 465 — прямое TLS-соединение
-	conn, err := tls.Dial("tcp", net.JoinHostPort(host, port), &tls.Config{
-		ServerName: host,
-	})
+	// Порт 465 — прямое TLS-соединение. net.DialTimeout даёт явный dial timeout;
+	// SetDeadline покрывает TLS-handshake и всю SMTP-сессию.
+	rawConn, err := net.DialTimeout("tcp", net.JoinHostPort(host, port), 10*time.Second)
 	if err != nil {
-		return fmt.Errorf("smtp tls dial: %w", err)
+		return fmt.Errorf("smtp dial: %w", err)
 	}
+	rawConn.SetDeadline(time.Now().Add(30 * time.Second))
+	tlsConn := tls.Client(rawConn, &tls.Config{ServerName: host})
 
-	client, err := smtp.NewClient(conn, host)
+	client, err := smtp.NewClient(tlsConn, host)
 	if err != nil {
 		return fmt.Errorf("smtp client: %w", err)
 	}

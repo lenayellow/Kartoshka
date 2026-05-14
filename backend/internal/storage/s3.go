@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -51,6 +52,8 @@ func NewS3Client() (*S3Client, error) {
 
 // UploadFile загружает файл в Object Storage и возвращает публичный URL.
 func (c *S3Client) UploadFile(ctx context.Context, key, contentType string, data []byte) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 	_, err := c.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(c.bucket),
 		Key:         aws.String(key),
@@ -65,6 +68,8 @@ func (c *S3Client) UploadFile(ctx context.Context, key, contentType string, data
 
 // DeleteFile удаляет файл из Object Storage.
 func (c *S3Client) DeleteFile(ctx context.Context, key string) error {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 	_, err := c.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Bucket: aws.String(c.bucket),
 		Key:    aws.String(key),

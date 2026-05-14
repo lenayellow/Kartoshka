@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -81,8 +82,12 @@ func (h *ItemHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusCreated, item)
 	if h.notifier != nil {
-		go h.notifier.NotifyListChanged(context.Background(), listID, userID,
-			"Супер Списки", req.Name+" добавлен в список")
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			h.notifier.NotifyListChanged(ctx, listID, userID,
+				"Супер Списки", req.Name+" добавлен в список")
+		}()
 	}
 }
 
@@ -116,8 +121,12 @@ func (h *ItemHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, item)
 	if h.notifier != nil {
-		go h.notifier.NotifyListChanged(context.Background(), listID, userID,
-			"Супер Списки", req.Name+" изменён")
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			h.notifier.NotifyListChanged(ctx, listID, userID,
+				"Супер Списки", req.Name+" изменён")
+		}()
 	}
 }
 
@@ -138,8 +147,12 @@ func (h *ItemHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 	if h.notifier != nil {
-		go h.notifier.NotifyListChanged(context.Background(), listID, userID,
-			"Супер Списки", "Товар удалён из списка")
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			h.notifier.NotifyListChanged(ctx, listID, userID,
+				"Супер Списки", "Товар удалён из списка")
+		}()
 	}
 }
 
@@ -223,8 +236,12 @@ func (h *ItemHandler) Check(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusNoContent)
 	if h.notifier != nil {
-		go h.notifier.NotifyListChanged(context.Background(), listID, userID,
-			"Супер Списки", item.Name+" куплен")
+		go func() {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			h.notifier.NotifyListChanged(ctx, listID, userID,
+				"Супер Списки", item.Name+" куплен")
+		}()
 	}
 }
 

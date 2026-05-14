@@ -10,8 +10,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/lena/kartoshka-backend/internal/httpclient"
 	"github.com/lena/kartoshka-backend/internal/models"
 )
+
+var yandexClient = httpclient.YandexOAuth()
 
 type yandexTokenResp struct {
 	AccessToken string `json:"access_token"`
@@ -33,7 +36,7 @@ func ExchangeYandexCode(ctx context.Context, code string) (*models.YandexProfile
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := yandexClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("yandex token request: %w", err)
 	}
@@ -60,7 +63,7 @@ func fetchYandexProfile(ctx context.Context, yandexToken string) (*models.Yandex
 	}
 	req.Header.Set("Authorization", "OAuth "+yandexToken)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := yandexClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("yandex info request: %w", err)
 	}

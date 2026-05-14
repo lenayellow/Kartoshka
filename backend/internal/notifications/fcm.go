@@ -16,7 +16,11 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+
+	"github.com/lena/kartoshka-backend/internal/httpclient"
 )
+
+var fcmHTTPClient = httpclient.FCM()
 
 type serviceAccountKey struct {
 	PrivateKey  string `json:"private_key"`
@@ -84,10 +88,16 @@ func getFCMAccessToken(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("подпись JWT FCM: %w", err)
 	}
 
-	resp, err := http.PostForm(tokenURI, url.Values{
-		"grant_type": {"urn:ietf:params:oauth:grant-type:jwt-bearer"},
-		"assertion":  {signed},
-	})
+	tokenReq, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenURI,
+		strings.NewReader(url.Values{
+			"grant_type": {"urn:ietf:params:oauth:grant-type:jwt-bearer"},
+			"assertion":  {signed},
+		}.Encode()))
+	if err != nil {
+		return "", fmt.Errorf("создание запроса токена FCM: %w", err)
+	}
+	tokenReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := fcmHTTPClient.Do(tokenReq)
 	if err != nil {
 		return "", fmt.Errorf("запрос токена FCM: %w", err)
 	}
@@ -140,7 +150,7 @@ func SendFCM(ctx context.Context, deviceToken, title, body string) error {
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := fcmHTTPClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("FCM запрос: %w", err)
 	}

@@ -8,7 +8,11 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/lena/kartoshka-backend/internal/httpclient"
 )
+
+var ruStoreHTTPClient = httpclient.RuStore()
 
 // SendRuStore отправляет push-уведомление через RuStore Push API.
 func SendRuStore(ctx context.Context, deviceToken, title, body string) error {
@@ -37,7 +41,7 @@ func SendRuStore(ctx context.Context, deviceToken, title, body string) error {
 	req.Header.Set("Authorization", serviceToken)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := ruStoreHTTPClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("RuStore запрос: %w", err)
 	}
