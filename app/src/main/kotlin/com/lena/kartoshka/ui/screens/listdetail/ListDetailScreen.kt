@@ -1268,14 +1268,23 @@ private fun CategoryRow(
             )
         }
         if (isExpanded) {
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                    horizontal = 4.dp, vertical = 10.dp
-                )
+            Column(
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                lazyItems(category.items) { itemName ->
-                    CategoryItemCard(name = itemName, onAdd = { onItemAdd(itemName) })
+                category.items.chunked(3).forEach { row ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        row.forEach { itemName ->
+                            CategoryItemCard(
+                                name = itemName,
+                                onAdd = { onItemAdd(itemName) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        repeat(3 - row.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
                 }
             }
         }
@@ -1285,30 +1294,31 @@ private fun CategoryRow(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun CategoryItemCard(name: String, onAdd: () -> Unit) {
+private fun CategoryItemCard(name: String, onAdd: () -> Unit, modifier: Modifier = Modifier) {
     Box(
-        modifier = Modifier
-            .size(width = 100.dp, height = 80.dp)
-            .clip(RoundedCornerShape(14.dp))
+        modifier = modifier
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(16.dp))
             .background(CategoryItemColor)
             .combinedClickable(onClick = onAdd)
             .padding(10.dp)
     ) {
         Text(
             text = name.first().uppercaseChar().toString(),
-            fontSize = 36.sp,
+            fontSize = 52.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White.copy(alpha = 0.3f),
             modifier = Modifier.align(Alignment.Center)
         )
         Text(
             text = name,
-            fontSize = 11.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
             color = Color.White,
-            lineHeight = 14.sp,
+            lineHeight = 16.sp,
             maxLines = 2,
-            modifier = Modifier.align(Alignment.BottomStart)
+            modifier = Modifier.align(Alignment.BottomCenter),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
     }
 }
@@ -1339,18 +1349,20 @@ private fun RecentlyUsedSection(items: List<Item>, onItemClick: (Item) -> Unit) 
                 modifier = Modifier.size(20.dp)
             )
         }
-        items.chunked(3).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                row.forEach { item ->
-                    ItemCard(
-                        item = item,
-                        cardColor = Color(0xFF3D6B56),
-                        modifier = Modifier.weight(1f),
-                        onClick = { onItemClick(item) }
-                    )
-                }
-                repeat(3 - row.size) {
-                    Spacer(modifier = Modifier.weight(1f))
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            items.chunked(3).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    row.forEach { item ->
+                        ItemCard(
+                            item = item,
+                            cardColor = Color(0xFF3D6B56),
+                            modifier = Modifier.weight(1f),
+                            onClick = { onItemClick(item) }
+                        )
+                    }
+                    repeat(3 - row.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }
