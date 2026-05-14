@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
+	"github.com/lena/kartoshka-backend/internal/apierror"
 	"github.com/lena/kartoshka-backend/internal/middleware"
 	"github.com/lena/kartoshka-backend/internal/models"
 	"github.com/lena/kartoshka-backend/internal/notifications"
@@ -37,13 +38,13 @@ func (h *ItemHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	listID := chi.URLParam(r, "list_id")
 
 	if role, err := h.lists.GetMemberRole(r.Context(), listID, userID); err != nil || role == "" {
-		http.Error(w, "список не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeListNotFound, "List not found", "")
 		return
 	}
 
 	items, err := h.items.GetAllByList(r.Context(), listID)
 	if err != nil {
-		http.Error(w, "ошибка базы данных", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 	if items == nil {
@@ -58,7 +59,7 @@ func (h *ItemHandler) Create(w http.ResponseWriter, r *http.Request) {
 	listID := chi.URLParam(r, "list_id")
 
 	if role, err := h.lists.GetMemberRole(r.Context(), listID, userID); err != nil || role == "" {
-		http.Error(w, "список не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeListNotFound, "List not found", "")
 		return
 	}
 
@@ -70,14 +71,14 @@ func (h *ItemHandler) Create(w http.ResponseWriter, r *http.Request) {
 		SortIndex  int32  `json:"sort_index"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Name == "" {
-		http.Error(w, "поле name обязательно", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "Item name is required", "")
 		return
 	}
 
 	item, err := h.items.Create(r.Context(), listID, userID,
 		req.Name, req.Tags, req.Note, req.CategoryID, req.SortIndex)
 	if err != nil {
-		http.Error(w, "ошибка создания товара", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeItemCreateFailed, "Failed to create item", err.Error())
 		return
 	}
 	writeJSON(w, http.StatusCreated, item)
@@ -98,7 +99,7 @@ func (h *ItemHandler) Update(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "item_id")
 
 	if role, err := h.lists.GetMemberRole(r.Context(), listID, userID); err != nil || role == "" {
-		http.Error(w, "список не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeListNotFound, "List not found", "")
 		return
 	}
 
@@ -109,14 +110,14 @@ func (h *ItemHandler) Update(w http.ResponseWriter, r *http.Request) {
 		CategoryID string `json:"category_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Name == "" {
-		http.Error(w, "поле name обязательно", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "Item name is required", "")
 		return
 	}
 
 	item, err := h.items.Update(r.Context(), itemID, userID,
 		req.Name, req.Tags, req.Note, req.CategoryID)
 	if err != nil {
-		http.Error(w, "ошибка обновления", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to update item", err.Error())
 		return
 	}
 	writeJSON(w, http.StatusOK, item)
@@ -137,12 +138,12 @@ func (h *ItemHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "item_id")
 
 	if role, err := h.lists.GetMemberRole(r.Context(), listID, userID); err != nil || role == "" {
-		http.Error(w, "список не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeListNotFound, "List not found", "")
 		return
 	}
 
 	if err := h.items.SoftDelete(r.Context(), itemID, userID); err != nil {
-		http.Error(w, "ошибка удаления", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to delete item", err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -159,7 +160,7 @@ func (h *ItemHandler) Delete(w http.ResponseWriter, r *http.Request) {
 // POST /lists/{list_id}/items/{item_id}/photo — загрузить фото товара (multipart, поле "photo")
 func (h *ItemHandler) UploadPhoto(w http.ResponseWriter, r *http.Request) {
 	if h.store == nil {
-		http.Error(w, "загрузка файлов не настроена (S3)", http.StatusNotImplemented)
+		apierror.Write(w, r, http.StatusNotImplemented, apierror.CodeUnavailable, "File upload not configured", "")
 		return
 	}
 	userID := middleware.GetUserID(r)
@@ -167,24 +168,24 @@ func (h *ItemHandler) UploadPhoto(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "item_id")
 
 	if role, err := h.lists.GetMemberRole(r.Context(), listID, userID); err != nil || role == "" {
-		http.Error(w, "список не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeListNotFound, "List not found", "")
 		return
 	}
 
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		http.Error(w, "файл слишком большой (макс. 10 МБ)", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "File too large (max 10 MB)", err.Error())
 		return
 	}
 	file, header, err := r.FormFile("photo")
 	if err != nil {
-		http.Error(w, "поле photo обязательно", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "photo field is required", err.Error())
 		return
 	}
 	defer file.Close()
 
 	data, err := io.ReadAll(file)
 	if err != nil {
-		http.Error(w, "ошибка чтения файла", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to read file", err.Error())
 		return
 	}
 
@@ -196,18 +197,18 @@ func (h *ItemHandler) UploadPhoto(w http.ResponseWriter, r *http.Request) {
 	key := fmt.Sprintf("items/%s/%s/%s.jpg", listID, itemID, uuid.New().String())
 	url, err := h.store.UploadFile(r.Context(), key, contentType, data)
 	if err != nil {
-		http.Error(w, "ошибка загрузки фото", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to upload photo", err.Error())
 		return
 	}
 
 	if err := h.items.UpdatePhotoURL(r.Context(), itemID, url); err != nil {
-		http.Error(w, "ошибка обновления товара", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to update item", err.Error())
 		return
 	}
 
 	item, err := h.items.GetByID(r.Context(), itemID)
 	if err != nil || item == nil {
-		http.Error(w, "товар не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeItemNotFound, "Item not found", "")
 		return
 	}
 	writeJSON(w, http.StatusOK, item)
@@ -220,18 +221,18 @@ func (h *ItemHandler) Check(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "item_id")
 
 	if role, err := h.lists.GetMemberRole(r.Context(), listID, userID); err != nil || role == "" {
-		http.Error(w, "список не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeListNotFound, "List not found", "")
 		return
 	}
 
 	item, err := h.items.GetByID(r.Context(), itemID)
 	if err != nil || item == nil {
-		http.Error(w, "товар не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeItemNotFound, "Item not found", "")
 		return
 	}
 
 	if err := h.items.Check(r.Context(), itemID, item.Name, listID, userID); err != nil {
-		http.Error(w, "ошибка", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -252,18 +253,18 @@ func (h *ItemHandler) Uncheck(w http.ResponseWriter, r *http.Request) {
 	itemID := chi.URLParam(r, "item_id")
 
 	if role, err := h.lists.GetMemberRole(r.Context(), listID, userID); err != nil || role == "" {
-		http.Error(w, "список не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeListNotFound, "List not found", "")
 		return
 	}
 
 	if err := h.items.Uncheck(r.Context(), itemID, userID); err != nil {
-		http.Error(w, "ошибка", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 
 	item, err := h.items.GetByID(r.Context(), itemID)
 	if err != nil || item == nil {
-		http.Error(w, "товар не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeItemNotFound, "Item not found", "")
 		return
 	}
 	writeJSON(w, http.StatusOK, item)
@@ -279,27 +280,27 @@ func (h *ItemHandler) Move(w http.ResponseWriter, r *http.Request) {
 		TargetListID string `json:"target_list_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.TargetListID == "" {
-		http.Error(w, "поле target_list_id обязательно", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "target_list_id is required", "")
 		return
 	}
 
 	if role, err := h.lists.GetMemberRole(r.Context(), listID, userID); err != nil || role == "" {
-		http.Error(w, "список не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeListNotFound, "List not found", "")
 		return
 	}
 	if role, err := h.lists.GetMemberRole(r.Context(), req.TargetListID, userID); err != nil || role == "" {
-		http.Error(w, "целевой список не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeListNotFound, "Target list not found", "")
 		return
 	}
 
 	if err := h.items.Move(r.Context(), itemID, req.TargetListID, userID); err != nil {
-		http.Error(w, "ошибка перемещения", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to move item", err.Error())
 		return
 	}
 
 	item, err := h.items.GetByID(r.Context(), itemID)
 	if err != nil || item == nil {
-		http.Error(w, "товар не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeItemNotFound, "Item not found", "")
 		return
 	}
 	writeJSON(w, http.StatusOK, item)
@@ -311,7 +312,7 @@ func (h *ItemHandler) Reorder(w http.ResponseWriter, r *http.Request) {
 	listID := chi.URLParam(r, "list_id")
 
 	if role, err := h.lists.GetMemberRole(r.Context(), listID, userID); err != nil || role == "" {
-		http.Error(w, "список не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeListNotFound, "List not found", "")
 		return
 	}
 
@@ -319,12 +320,12 @@ func (h *ItemHandler) Reorder(w http.ResponseWriter, r *http.Request) {
 		Items []models.ReorderItem `json:"items"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || len(req.Items) == 0 {
-		http.Error(w, "поле items обязательно", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "items field is required", "")
 		return
 	}
 
 	if err := h.items.Reorder(r.Context(), req.Items); err != nil {
-		http.Error(w, "ошибка переупорядочивания", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to reorder items", err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -336,13 +337,13 @@ func (h *ItemHandler) GetRecent(w http.ResponseWriter, r *http.Request) {
 	listID := chi.URLParam(r, "list_id")
 
 	if role, err := h.lists.GetMemberRole(r.Context(), listID, userID); err != nil || role == "" {
-		http.Error(w, "список не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeListNotFound, "List not found", "")
 		return
 	}
 
 	entries, err := h.items.GetRecent(r.Context(), listID)
 	if err != nil {
-		http.Error(w, "ошибка базы данных", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 	if entries == nil {

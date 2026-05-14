@@ -158,6 +158,7 @@
     <string name="error_session_expired">Session expired. Please log in again.</string>
     <string name="error_too_many_requests">Too many requests. Please wait a moment.</string>
     <string name="error_unknown">Something went wrong. Please try again.</string>
+    <string name="error_not_found">Content not found.</string>
     <!-- Share errors (specific) -->
     <string name="share_error_no_connection">No internet. Invite not sent.</string>
     <string name="share_error_user_not_found">No user found with this email.</string>
@@ -165,6 +166,7 @@
     <string name="share_error_already_member">This user is already a member of the list.</string>
     <string name="share_error_self_invite">You can\'t invite yourself.</string>
     <string name="share_error_server">Server temporarily unavailable. Try again later.</string>
+    <string name="share_error_invite_expired">This invitation has expired. Ask the owner for a new link.</string>
     <!-- Items errors -->
     <string name="items_error_create_failed">Couldn\'t add item. Please try again.</string>
     <string name="items_error_update_failed">Couldn\'t update item.</string>

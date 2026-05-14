@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/lena/kartoshka-backend/internal/apierror"
 	"github.com/lena/kartoshka-backend/internal/auth"
 	"github.com/lena/kartoshka-backend/internal/models"
 	"github.com/lena/kartoshka-backend/internal/notifications"
@@ -31,32 +32,32 @@ func (h *AuthHandler) YandexLogin(w http.ResponseWriter, r *http.Request) {
 		Code string `json:"code"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Code == "" {
-		http.Error(w, "поле code обязательно", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "OAuth code is required", "")
 		return
 	}
 
 	profile, err := auth.ExchangeYandexCode(r.Context(), req.Code)
 	if err != nil {
-		http.Error(w, "ошибка Yandex OAuth: "+err.Error(), http.StatusBadGateway)
+		apierror.Write(w, r, http.StatusBadGateway, apierror.CodeYandexAuthFailed, "Yandex authentication failed", err.Error())
 		return
 	}
 
 	user, err := h.users.GetByYandexUID(r.Context(), profile.UID)
 	if err != nil {
-		http.Error(w, "ошибка базы данных", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 	if user == nil {
 		user, err = h.users.Create(r.Context(), profile.UID, profile.DefaultEmail, profile.RealName)
 		if err != nil {
-			http.Error(w, "ошибка создания пользователя", http.StatusInternalServerError)
+			apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to create user", err.Error())
 			return
 		}
 	}
 
 	pair, err := h.issueTokenPair(r.Context(), user.UserID)
 	if err != nil {
-		http.Error(w, "ошибка выдачи токена", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to issue token", err.Error())
 		return
 	}
 	writeJSON(w, http.StatusOK, pair)
@@ -70,51 +71,51 @@ func (h *AuthHandler) EmailRegister(w http.ResponseWriter, r *http.Request) {
 		Name     string `json:"name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "неверный формат запроса", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "Invalid request format", err.Error())
 		return
 	}
 	if req.Email == "" || req.Password == "" || req.Name == "" {
-		http.Error(w, "email, password и name обязательны", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "email, password and name are required", "")
 		return
 	}
 	if len(req.Password) < 8 {
-		http.Error(w, "пароль должен быть не менее 8 символов", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeWeakPassword, "Password must be at least 8 characters", "")
 		return
 	}
 
 	existing, err := h.users.GetByEmail(r.Context(), req.Email)
 	if err != nil {
-		http.Error(w, "ошибка базы данных", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 	if existing != nil {
-		http.Error(w, "пользователь с таким email уже существует", http.StatusConflict)
+		apierror.Write(w, r, http.StatusConflict, apierror.CodeEmailTaken, "Email already registered", "")
 		return
 	}
 
 	user, err := h.users.Create(r.Context(), "", req.Email, req.Name)
 	if err != nil {
-		http.Error(w, "ошибка создания пользователя", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to create user", err.Error())
 		return
 	}
 
 	hash, err := auth.HashPassword(req.Password)
 	if err != nil {
-		http.Error(w, "ошибка хеширования пароля", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 	if err := h.users.SetPasswordHash(r.Context(), user.UserID, hash); err != nil {
-		http.Error(w, "ошибка сохранения пароля", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 	if err := h.users.SetVerified(r.Context(), user.UserID); err != nil {
-		http.Error(w, "ошибка подтверждения пользователя", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 
 	pair, err := h.issueTokenPair(r.Context(), user.UserID)
 	if err != nil {
-		http.Error(w, "ошибка выдачи токена", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to issue token", err.Error())
 		return
 	}
 	writeJSON(w, http.StatusCreated, pair)
@@ -127,23 +128,23 @@ func (h *AuthHandler) EmailLogin(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Email == "" || req.Password == "" {
-		http.Error(w, "email и password обязательны", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "email and password are required", "")
 		return
 	}
 
 	user, err := h.users.GetByEmail(r.Context(), req.Email)
 	if err != nil {
-		http.Error(w, "ошибка базы данных", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 	if user == nil || user.PasswordHash == "" || !auth.CheckPassword(user.PasswordHash, req.Password) {
-		http.Error(w, "неверный email или пароль", http.StatusUnauthorized)
+		apierror.Write(w, r, http.StatusUnauthorized, apierror.CodeInvalidCredentials, "Invalid email or password", "")
 		return
 	}
 
 	pair, err := h.issueTokenPair(r.Context(), user.UserID)
 	if err != nil {
-		http.Error(w, "ошибка выдачи токена", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to issue token", err.Error())
 		return
 	}
 	writeJSON(w, http.StatusOK, pair)
@@ -153,18 +154,18 @@ func (h *AuthHandler) EmailLogin(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) ConfirmEmail(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
 	if token == "" {
-		http.Error(w, "токен отсутствует", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "Confirmation token missing", "")
 		return
 	}
 
 	userID, err := auth.ParseConfirmToken(token)
 	if err != nil {
-		http.Error(w, "недействительная или устаревшая ссылка", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "Invalid or expired confirmation link", err.Error())
 		return
 	}
 
 	if err := h.users.SetVerified(r.Context(), userID); err != nil {
-		http.Error(w, "ошибка подтверждения", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 
@@ -181,23 +182,23 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 		Email string `json:"email"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.Email == "" {
-		http.Error(w, "поле email обязательно", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "email is required", "")
 		return
 	}
 
 	user, err := h.users.GetByEmail(r.Context(), req.Email)
 	if err != nil {
-		http.Error(w, "ошибка базы данных", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 	if user == nil || user.PasswordHash == "" {
-		http.Error(w, "аккаунт с таким email не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeEmailNotFound, "No account with this email", "")
 		return
 	}
 
 	token, err := auth.GenerateResetToken(user.UserID)
 	if err != nil {
-		http.Error(w, "ошибка генерации токена", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 
@@ -245,7 +246,7 @@ func (h *AuthHandler) ResetPasswordForm(w http.ResponseWriter, r *http.Request) 
 // POST /auth/email/reset — сохранение нового пароля (из HTML-формы)
 func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "неверный запрос", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "Invalid request", err.Error())
 		return
 	}
 	token := r.FormValue("token")
@@ -271,11 +272,11 @@ func (h *AuthHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 
 	hash, err := auth.HashPassword(password)
 	if err != nil {
-		http.Error(w, "ошибка хеширования", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 	if err := h.users.SetPasswordHash(r.Context(), userID, hash); err != nil {
-		http.Error(w, "ошибка сохранения пароля", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 
@@ -291,13 +292,13 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refresh_token"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.RefreshToken == "" {
-		http.Error(w, "поле refresh_token обязательно", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "refresh_token is required", "")
 		return
 	}
 
 	userID, expiresAt, err := h.tokens.Get(r.Context(), req.RefreshToken)
 	if err != nil || time.Now().After(expiresAt) {
-		http.Error(w, "токен недействителен", http.StatusUnauthorized)
+		apierror.Write(w, r, http.StatusUnauthorized, apierror.CodeInvalidRefreshToken, "Refresh token is invalid or expired", "")
 		return
 	}
 
@@ -305,7 +306,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 	pair, err := h.issueTokenPair(r.Context(), userID)
 	if err != nil {
-		http.Error(w, "ошибка выдачи токена", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to issue token", err.Error())
 		return
 	}
 	writeJSON(w, http.StatusOK, pair)
@@ -317,7 +318,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		RefreshToken string `json:"refresh_token"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.RefreshToken == "" {
-		http.Error(w, "поле refresh_token обязательно", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "refresh_token is required", "")
 		return
 	}
 	_ = h.tokens.Delete(r.Context(), req.RefreshToken)

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/lena/kartoshka-backend/internal/apierror"
 	"github.com/lena/kartoshka-backend/internal/auth"
 )
 
@@ -17,12 +18,12 @@ func Bearer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		header := r.Header.Get("Authorization")
 		if !strings.HasPrefix(header, "Bearer ") {
-			http.Error(w, "требуется авторизация", http.StatusUnauthorized)
+			apierror.Write(w, r, http.StatusUnauthorized, apierror.CodeUnauthorized, "Authentication required", "")
 			return
 		}
 		userID, err := auth.ParseAccessToken(strings.TrimPrefix(header, "Bearer "))
 		if err != nil {
-			http.Error(w, "недействительный токен", http.StatusUnauthorized)
+			apierror.Write(w, r, http.StatusUnauthorized, apierror.CodeUnauthorized, "Invalid or expired token", "")
 			return
 		}
 		if a := getAttrs(r.Context()); a != nil {

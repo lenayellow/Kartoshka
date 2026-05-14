@@ -153,6 +153,7 @@
     <string name="error_session_expired">Сессия истекла. Войдите снова.</string>
     <string name="error_too_many_requests">Слишком много запросов. Подождите немного.</string>
     <string name="error_unknown">Что-то пошло не так. Попробуйте ещё раз.</string>
+    <string name="error_not_found">Не найдено.</string>
     <!-- Share errors (specific) -->
     <string name="share_error_no_connection">Нет интернета. Приглашение не отправлено.</string>
     <string name="share_error_user_not_found">Пользователь с таким email не зарегистрирован.</string>
@@ -160,6 +161,7 @@
     <string name="share_error_already_member">Этот пользователь уже участник списка.</string>
     <string name="share_error_self_invite">Нельзя пригласить самого себя.</string>
     <string name="share_error_server">Сервер временно недоступен. Попробуйте позже.</string>
+    <string name="share_error_invite_expired">Срок действия приглашения истёк. Попросите владельца отправить новую ссылку.</string>
     <!-- Items errors -->
     <string name="items_error_create_failed">Не удалось добавить товар. Попробуйте ещё раз.</string>
     <string name="items_error_update_failed">Не удалось обновить товар.</string>

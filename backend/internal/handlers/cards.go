@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/lena/kartoshka-backend/internal/apierror"
 	"github.com/lena/kartoshka-backend/internal/middleware"
 	"github.com/lena/kartoshka-backend/internal/models"
 	"github.com/lena/kartoshka-backend/internal/repository"
@@ -27,7 +28,7 @@ func (h *CardHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	cards, err := h.cards.GetAllByUser(r.Context(), userID)
 	if err != nil {
-		http.Error(w, "ошибка базы данных", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 	if cards == nil {
@@ -47,18 +48,18 @@ func (h *CardHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Color         int64  `json:"color"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "неверный формат запроса", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "Invalid request format", err.Error())
 		return
 	}
 	if req.Name == "" || req.BarcodeValue == "" {
-		http.Error(w, "поля name и barcode_value обязательны", http.StatusBadRequest)
+		apierror.Write(w, r, http.StatusBadRequest, apierror.CodeBadRequest, "name and barcode_value are required", "")
 		return
 	}
 
 	card, err := h.cards.Create(r.Context(), userID,
 		req.Name, req.BarcodeValue, req.BarcodeFormat, req.Color)
 	if err != nil {
-		http.Error(w, "ошибка создания карты", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to create card", err.Error())
 		return
 	}
 	writeJSON(w, http.StatusCreated, card)
@@ -70,7 +71,7 @@ func (h *CardHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	cardID := chi.URLParam(r, "card_id")
 
 	if err := h.cards.Delete(r.Context(), cardID, userID); err != nil {
-		http.Error(w, "ошибка удаления карты", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to delete card", err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

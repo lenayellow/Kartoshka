@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/lena/kartoshka-backend/internal/apierror"
 	"github.com/lena/kartoshka-backend/internal/middleware"
 	"github.com/lena/kartoshka-backend/internal/notifications"
 	"github.com/lena/kartoshka-backend/internal/repository"
@@ -31,7 +32,7 @@ func (h *InvitationHandler) Create(w http.ResponseWriter, r *http.Request) {
 	listID := chi.URLParam(r, "list_id")
 
 	if role, err := h.lists.GetMemberRole(r.Context(), listID, userID); err != nil || role == "" {
-		http.Error(w, "список не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeListNotFound, "List not found", "")
 		return
 	}
 
@@ -43,7 +44,7 @@ func (h *InvitationHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	inv, err := h.invitations.Create(r.Context(), listID, userID, req.InviteeEmail)
 	if err != nil {
-		http.Error(w, "ошибка создания инвайта", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to create invitation", err.Error())
 		return
 	}
 
@@ -81,12 +82,11 @@ func (h *InvitationHandler) GetInfo(w http.ResponseWriter, r *http.Request) {
 
 	info, err := h.invitations.GetInfoByToken(r.Context(), token)
 	if err != nil || info == nil {
-		http.Error(w, "инвайт не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeInviteNotFound, "Invitation not found", "")
 		return
 	}
 
 	if info.Status == "expired" || (info.Status == "pending" && time.Now().After(info.ExpiresAt)) {
-		// Помечаем как истёкший если ещё не помечен
 		if info.Status == "pending" {
 			_ = h.invitations.MarkExpired(r.Context(), token)
 			info.Status = "expired"
@@ -103,12 +103,11 @@ func (h *InvitationHandler) Accept(w http.ResponseWriter, r *http.Request) {
 
 	inv, err := h.invitations.GetByToken(r.Context(), token)
 	if err != nil || inv == nil {
-		http.Error(w, "инвайт не найден", http.StatusNotFound)
+		apierror.Write(w, r, http.StatusNotFound, apierror.CodeInviteNotFound, "Invitation not found", "")
 		return
 	}
 
 	if inv.Status == "accepted" {
-		// Уже принят — проверяем что пользователь действительно является участником
 		writeJSON(w, http.StatusOK, map[string]string{
 			"message": "вы уже участник этого списка",
 			"list_id": inv.ListID,
@@ -120,14 +119,13 @@ func (h *InvitationHandler) Accept(w http.ResponseWriter, r *http.Request) {
 		if inv.Status != "expired" {
 			_ = h.invitations.MarkExpired(r.Context(), token)
 		}
-		http.Error(w, "срок действия приглашения истёк", http.StatusGone)
+		apierror.Write(w, r, http.StatusGone, apierror.CodeInviteExpired, "Invitation has expired", "")
 		return
 	}
 
-	// Если пользователь уже участник — вернуть 200 (идемпотентно)
 	existingRole, err := h.lists.GetMemberRole(r.Context(), inv.ListID, userID)
 	if err != nil {
-		http.Error(w, "ошибка проверки членства", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
 		return
 	}
 	if existingRole != "" {
@@ -139,7 +137,7 @@ func (h *InvitationHandler) Accept(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.invitations.Accept(r.Context(), token, inv.ListID, userID); err != nil {
-		http.Error(w, "ошибка принятия приглашения", http.StatusInternalServerError)
+		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Failed to accept invitation", err.Error())
 		return
 	}
 
