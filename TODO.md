@@ -63,11 +63,51 @@ handlers (через httptest), repository (интеграционные с YDB)
 Android-сторона уже умеет показывать корректные сообщения для всех
 четырёх случаев (см. ShareScreen.kt sendInvite + NetworkError.Conflict).
 
-### 2. POST /lists/{id}/items возвращает 500 для некоторых товаров
+### 2. POST /lists/{id}/items возвращает 500 для ЛЮБОГО нового товара
 
-Наблюдалось при добавлении товаров "Багет", "Пицца". Тело ответа:
-"ошибка создания товара". Логов сервера нет, нужны structured logs
-(slog в JSON) со стороны Go-функции, чтобы понять причину.
+Ранее наблюдалось только на "Багет"/"Пицца" — это была ложная гипотеза.
+На самом деле 500 воспроизводится для каждого нового товара в UUID-списке.
+
+Корневая причина: UPSERT в `ItemRepo.Create` не включает `photo_url`
+в список колонок → в YDB это поле остаётся NULL. Затем `Create` вызывает
+`GetByID(ctx, itemID)` который запускает `scanItem()`. В строке
+`backend/internal/repository/items.go:353`:
+
+    named.Optional("photo_url", &i.PhotoURL)
+
+SDK пытается scan-нуть `NULL (Optional<Utf8>)` в `string` (не `*string`)
+→ ошибка типа в YDB Go SDK v3.73.1. UPSERT успешен (~335ms), падает
+именно `GetByID` (~340ms), итого ~675ms латентности и 500.
+
+Сервер не логирует ошибку: `h.logger.Error` не вызывается в
+`ItemHandler.Create` перед `apierror.Write`.
+
+Фикс (на выбор):
+- Вариант А: изменить `models.Item` — nullable поля как указатели:
+  `PhotoURL *string`, `Tags *string`, `Note *string`,
+  `CategoryID *string`, `SortIndex *int32`.
+- Вариант Б: добавить `photo_url` в UPSERT с `types.NullValue(...)`,
+  чтобы YDB получал явный `Optional<Utf8>`, а не имплицитный NULL.
+- Плюс в обоих случаях: добавить `h.logger.Error("item create failed",
+  "err", err, "list_id", listID)` в `ItemHandler.Create`.
+
+### 3. Seed-списки вызывают бесконечный retry в WorkManager после логина
+
+Seed-списки (id "1"–"5") создаются локально в Room когда пользователь
+не залогинен. После логина они остаются в Room, и при попытке добавить
+в них товар бэкенд возвращает 500 — списка нет в YDB.
+
+С Sprint 3.4 (pending_ops + WorkManager) это вызовет бесконечный retry:
+500 классифицируется как ServerError → isRetryable() = true → Worker
+добавляет retry, retry_count растёт до 10, только тогда операция
+удаляется. Всё это время WorkManager будет периодически будить приложение.
+
+Фикс (на выбор):
+- При логине удалить seed-списки из Room и заменить реальными данными
+  с сервера (syncLists() уже это частично делает, но seed-данные могут
+  остаться если у пользователя нет своих списков на сервере).
+- Либо пометить seed-списки флагом `is_local_only` в ShoppingListEntity
+  и не вызывать API для операций с ними.
 
 ---
 
