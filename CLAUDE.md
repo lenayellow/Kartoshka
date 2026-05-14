@@ -138,3 +138,4 @@ Rules:
 5. After finishing an increment, report: files changed (`git status`), what to test on the emulator, and a suggested commit message. Then stop and wait.
 6. On "looks good, commit it": run `git add .` and `git commit -m "..."` and show output.
 7. On "broken": do NOT commit. Diagnose, propose a fix, wait for approval.
+8. **Never add Co-authored-by, Co-Committed-by, or any mention of Claude** in commit messages. Ever. Commits must be clean — subject line and optional body only.
