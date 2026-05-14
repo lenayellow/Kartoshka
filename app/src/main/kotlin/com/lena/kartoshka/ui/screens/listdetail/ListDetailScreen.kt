@@ -40,6 +40,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import com.lena.kartoshka.data.ThemeMode
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CameraAlt
@@ -137,9 +138,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import java.io.File
 
-private val ItemCardColor = Color(0xFFFF5449)
-private val RecentlyUsedCardColor = Color(0xFF4D662A)
-private val DeleteRed = Color(0xFFE53935)
 
 private fun detectCategoryId(name: String): String? =
     itemCategories.firstOrNull { cat -> cat.items.any { it.equals(name, ignoreCase = true) } }?.id
@@ -159,8 +157,8 @@ fun ListDetailScreen(
     sortRepository: SortRepository,
     appRepository: AppRepository,
     onBack: () -> Unit,
-    isDarkTheme: Boolean = true,
-    onThemeChange: (Boolean) -> Unit = {},
+    themeMode: ThemeMode = ThemeMode.SYSTEM,
+    onThemeChange: (ThemeMode) -> Unit = {},
     avatarPath: String? = null,
     onAvatarChange: (String?) -> Unit = {},
     userName: String? = null,
@@ -524,7 +522,7 @@ fun ListDetailScreen(
                 currentListId = list.id,
                 sortRepository = sortRepository,
                 appRepository = appRepository,
-                isDarkTheme = isDarkTheme,
+                themeMode = themeMode,
                 onThemeChange = onThemeChange,
                 avatarPath = avatarPath,
                 onAvatarChange = onAvatarChange,
@@ -812,13 +810,15 @@ private fun ItemCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
     onLongClick: () -> Unit = {},
-    cardColor: Color = ItemCardColor
+    cardColor: Color = Color.Unspecified
 ) {
+    val resolvedCardColor = if (cardColor == Color.Unspecified)
+        Color(0xFFFF5449) else cardColor
     Box(
         modifier = modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(16.dp))
-            .background(cardColor)
+            .background(resolvedCardColor)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .padding(10.dp)
     ) {
@@ -826,7 +826,7 @@ private fun ItemCard(
             text = item.name.first().uppercaseChar().toString(),
             fontSize = 52.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White.copy(alpha = 0.35f),
+            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.35f),
             modifier = Modifier.align(Alignment.Center)
         )
         if (item.tags.isNotEmpty()) {
@@ -838,7 +838,7 @@ private fun ItemCard(
                     Icon(
                         imageVector = tag.toIcon(),
                         contentDescription = null,
-                        tint = Color.White.copy(alpha = 0.9f),
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.9f),
                         modifier = Modifier.size(14.dp)
                     )
                 }
@@ -848,7 +848,7 @@ private fun ItemCard(
             Icon(
                 imageVector = Icons.Filled.CameraAlt,
                 contentDescription = null,
-                tint = Color.White.copy(alpha = 0.85f),
+                tint = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .size(14.dp)
@@ -864,7 +864,7 @@ private fun ItemCard(
                 text = item.name,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
                 lineHeight = 16.sp,
                 maxLines = 2,
                 textAlign = TextAlign.Center
@@ -873,7 +873,7 @@ private fun ItemCard(
                 Text(
                     text = item.note,
                     fontSize = 10.sp,
-                    color = Color.White.copy(alpha = 0.75f),
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.75f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center
@@ -1099,7 +1099,7 @@ private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onC
 
         Button(
             onClick = { showDeleteConfirm = true },
-            colors = ButtonDefaults.buttonColors(containerColor = DeleteRed),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
             shape = RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -1151,7 +1151,7 @@ private fun ItemDetailSheet(item: Item, onTagToggle: (ItemTag) -> Unit = {}, onC
                         }) {
                             Text(
                                 text = stringResource(R.string.delete_item_yes),
-                                color = DeleteRed
+                                color = MaterialTheme.colorScheme.error
                             )
                         }
                     }
@@ -1210,7 +1210,7 @@ private fun SettingsButton(icon: ImageVector, label: String, modifier: Modifier 
     }
 }
 
-private val CategoryItemColor = Color(0xFF5B7178)
+private val CategoryItemColor = Color(0xFF3D6B56)
 
 @Composable
 private fun CategoriesSection(
@@ -1344,7 +1344,7 @@ private fun RecentlyUsedSection(items: List<Item>, onItemClick: (Item) -> Unit) 
                 row.forEach { item ->
                     ItemCard(
                         item = item,
-                        cardColor = RecentlyUsedCardColor,
+                        cardColor = Color(0xFF3D6B56),
                         modifier = Modifier.weight(1f),
                         onClick = { onItemClick(item) }
                     )
@@ -1616,21 +1616,21 @@ private fun AddItemInfoSheet(
                 modifier = Modifier
                     .size(120.dp)
                     .clip(RoundedCornerShape(20.dp))
-                    .background(ItemCardColor)
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
                     .padding(12.dp)
             ) {
                 Text(
                     text = item.name.first().uppercaseChar().toString(),
                     fontSize = 52.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White.copy(alpha = 0.35f),
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.35f),
                     modifier = Modifier.align(Alignment.Center)
                 )
                 Text(
                     text = item.name,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                     lineHeight = 16.sp,
                     maxLines = 2,
                     modifier = Modifier.align(Alignment.BottomStart)
