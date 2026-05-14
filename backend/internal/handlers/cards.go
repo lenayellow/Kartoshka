@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -12,11 +13,12 @@ import (
 )
 
 type CardHandler struct {
-	cards *repository.CardRepo
+	cards  *repository.CardRepo
+	logger *slog.Logger
 }
 
-func NewCardHandler(cards *repository.CardRepo) *CardHandler {
-	return &CardHandler{cards: cards}
+func NewCardHandler(cards *repository.CardRepo, logger *slog.Logger) *CardHandler {
+	return &CardHandler{cards: cards, logger: logger}
 }
 
 // GET /cards

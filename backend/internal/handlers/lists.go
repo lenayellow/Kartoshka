@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -14,11 +14,12 @@ import (
 )
 
 type ListHandler struct {
-	lists *repository.ListRepo
+	lists  *repository.ListRepo
+	logger *slog.Logger
 }
 
-func NewListHandler(lists *repository.ListRepo) *ListHandler {
-	return &ListHandler{lists: lists}
+func NewListHandler(lists *repository.ListRepo, logger *slog.Logger) *ListHandler {
+	return &ListHandler{lists: lists, logger: logger}
 }
 
 // GET /lists
@@ -26,7 +27,7 @@ func (h *ListHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.GetUserID(r)
 	lists, err := h.lists.GetAllForUser(r.Context(), userID)
 	if err != nil {
-		fmt.Printf("GET /lists FAILED for user=%s: %v\n", userID, err)
+		h.logger.Error("get lists failed", "user_id", userID, "err", err)
 		http.Error(w, "ошибка базы данных", http.StatusInternalServerError)
 		return
 	}

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -15,10 +16,11 @@ import (
 type SyncHandler struct {
 	events *repository.EventsRepo
 	lists  *repository.ListRepo
+	logger *slog.Logger
 }
 
-func NewSyncHandler(events *repository.EventsRepo, lists *repository.ListRepo) *SyncHandler {
-	return &SyncHandler{events: events, lists: lists}
+func NewSyncHandler(events *repository.EventsRepo, lists *repository.ListRepo, logger *slog.Logger) *SyncHandler {
+	return &SyncHandler{events: events, lists: lists, logger: logger}
 }
 
 type eventsResponse struct {

@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -17,10 +18,11 @@ import (
 type InvitationHandler struct {
 	invitations *repository.InvitationRepo
 	lists       *repository.ListRepo
+	logger      *slog.Logger
 }
 
-func NewInvitationHandler(invitations *repository.InvitationRepo, lists *repository.ListRepo) *InvitationHandler {
-	return &InvitationHandler{invitations: invitations, lists: lists}
+func NewInvitationHandler(invitations *repository.InvitationRepo, lists *repository.ListRepo, logger *slog.Logger) *InvitationHandler {
+	return &InvitationHandler{invitations: invitations, lists: lists, logger: logger}
 }
 
 // POST /lists/{list_id}/invite — создать инвайт, вернуть deep-link
@@ -48,8 +50,6 @@ func (h *InvitationHandler) Create(w http.ResponseWriter, r *http.Request) {
 	deepLink := fmt.Sprintf("kartoshka://invite/%s", inv.InviteToken)
 	webLink := fmt.Sprintf("%s/invite/%s", appBaseURL(), inv.InviteToken)
 
-	fmt.Printf("invite: listID=%s inviteeEmail=%q\n", listID, req.InviteeEmail)
-
 	// Если указан email — попытаться отправить приглашение.
 	// Если SMTP падает — НЕ валим запрос: инвайт уже создан, ссылку возвращаем клиенту,
 	// чтобы он мог скопировать её и отправить вручную.
@@ -61,7 +61,7 @@ func (h *InvitationHandler) Create(w http.ResponseWriter, r *http.Request) {
 <p>Ссылка действительна 7 дней.</p>
 </body></html>`, webLink)
 		if err := notifications.SendEmail(req.InviteeEmail, "Приглашение в список — Супер Списки", body); err != nil {
-			fmt.Printf("ошибка отправки инвайта: %v\n", err)
+			h.logger.Error("invite email send failed", "list_id", listID, "err", err)
 		} else {
 			emailSent = true
 		}

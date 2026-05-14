@@ -2,16 +2,15 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
 
 	"github.com/lena/kartoshka-backend/internal/handlers"
+	"github.com/lena/kartoshka-backend/internal/logging"
 	"github.com/lena/kartoshka-backend/internal/middleware"
 	"github.com/lena/kartoshka-backend/internal/notifications"
 	"github.com/lena/kartoshka-backend/internal/repository"
@@ -20,20 +19,23 @@ import (
 
 func main() {
 	_ = godotenv.Load()
+	logger := logging.NewLogger()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	db, err := repository.Connect(ctx)
 	if err != nil {
-		log.Fatalf("YDB: %v", err)
+		logger.Error("ydb open failed", "err", err)
+		os.Exit(1)
 	}
 	defer db.Close(context.Background())
 
 	if err := db.Ping(ctx); err != nil {
-		log.Fatalf("YDB ping: %v", err)
+		logger.Error("ydb ping failed", "err", err)
+		os.Exit(1)
 	}
-	log.Println("YDB: соединение установлено")
+	logger.Info("ydb connected")
 
 	users := repository.NewUserRepo(db)
 	tokens := repository.NewTokenRepo(db)
@@ -44,28 +46,30 @@ func main() {
 
 	store, err := storage.NewS3Client()
 	if err != nil {
-		log.Fatalf("S3: %v", err)
+		logger.Error("s3 init failed", "err", err)
+		os.Exit(1)
 	}
 	if store == nil {
-		log.Println("S3 не настроен — загрузка медиа недоступна")
+		logger.Warn("s3 not configured, media unavailable")
 	}
 
 	invitations := repository.NewInvitationRepo(db)
 	events := repository.NewEventsRepo(db)
 
-	notifier := notifications.NewNotifier(pushTokens)
+	notifier := notifications.NewNotifier(pushTokens, logger)
 
-	authHandler := handlers.NewAuthHandler(users, tokens)
-	inviteHandler := handlers.NewInvitationHandler(invitations, lists)
-	syncHandler := handlers.NewSyncHandler(events, lists)
-	userHandler := handlers.NewUserHandler(users, pushTokens, store)
-	listHandler := handlers.NewListHandler(lists)
-	itemHandler := handlers.NewItemHandler(items, lists, store, notifier)
-	cardHandler := handlers.NewCardHandler(cards)
+	authHandler := handlers.NewAuthHandler(users, tokens, logger)
+	inviteHandler := handlers.NewInvitationHandler(invitations, lists, logger)
+	syncHandler := handlers.NewSyncHandler(events, lists, logger)
+	userHandler := handlers.NewUserHandler(users, pushTokens, store, logger)
+	listHandler := handlers.NewListHandler(lists, logger)
+	itemHandler := handlers.NewItemHandler(items, lists, store, notifier, logger)
+	cardHandler := handlers.NewCardHandler(cards, logger)
 
 	r := chi.NewRouter()
-	r.Use(chimiddleware.Logger)
-	r.Use(chimiddleware.Recoverer)
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Logging(logger))
+	r.Use(middleware.Recovery(logger))
 
 	// Auth
 	r.Post("/auth/yandex", authHandler.YandexLogin)
@@ -129,8 +133,9 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-	log.Printf("сервер запущен на :%s", port)
+	logger.Info("server started", "port", port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {
-		log.Fatalf("server: %v", err)
+		logger.Error("server failed", "err", err)
+		os.Exit(1)
 	}
 }

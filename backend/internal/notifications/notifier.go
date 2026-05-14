@@ -2,17 +2,18 @@ package notifications
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 
 	"github.com/lena/kartoshka-backend/internal/repository"
 )
 
 type Notifier struct {
 	tokens *repository.PushTokenRepo
+	logger *slog.Logger
 }
 
-func NewNotifier(tokens *repository.PushTokenRepo) *Notifier {
-	return &Notifier{tokens: tokens}
+func NewNotifier(tokens *repository.PushTokenRepo, logger *slog.Logger) *Notifier {
+	return &Notifier{tokens: tokens, logger: logger}
 }
 
 // NotifyListChanged рассылает push-уведомление всем участникам списка кроме инициатора.
@@ -20,7 +21,7 @@ func NewNotifier(tokens *repository.PushTokenRepo) *Notifier {
 func (n *Notifier) NotifyListChanged(ctx context.Context, listID, senderUserID, title, body string) {
 	tokenInfos, err := n.tokens.GetByListMembers(ctx, listID)
 	if err != nil {
-		fmt.Printf("push: ошибка получения токенов listID=%s: %v\n", listID, err)
+		n.logger.Error("push token fetch failed", "list_id", listID, "err", err)
 		return
 	}
 	for _, info := range tokenInfos {

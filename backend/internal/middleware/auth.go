@@ -25,6 +25,9 @@ func Bearer(next http.Handler) http.Handler {
 			http.Error(w, "недействительный токен", http.StatusUnauthorized)
 			return
 		}
+		if a := getAttrs(r.Context()); a != nil {
+			a.UserID = userID
+		}
 		ctx := context.WithValue(r.Context(), UserIDKey, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

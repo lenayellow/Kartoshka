@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -17,10 +18,11 @@ import (
 type AuthHandler struct {
 	users  *repository.UserRepo
 	tokens *repository.TokenRepo
+	logger *slog.Logger
 }
 
-func NewAuthHandler(users *repository.UserRepo, tokens *repository.TokenRepo) *AuthHandler {
-	return &AuthHandler{users: users, tokens: tokens}
+func NewAuthHandler(users *repository.UserRepo, tokens *repository.TokenRepo, logger *slog.Logger) *AuthHandler {
+	return &AuthHandler{users: users, tokens: tokens, logger: logger}
 }
 
 // POST /auth/yandex — обмен OAuth-кода на JWT-пару
@@ -204,7 +206,7 @@ func (h *AuthHandler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		if err := notifications.SendResetEmail(user.Email, user.Name, resetURL); err != nil {
-			fmt.Printf("reset email error: %v\n", err)
+			h.logger.Error("reset email send failed", "err", err)
 		}
 	}()
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -22,10 +23,11 @@ type ItemHandler struct {
 	lists    *repository.ListRepo
 	store    *storage.S3Client       // nil если S3 не настроен
 	notifier *notifications.Notifier // nil если push не настроен
+	logger   *slog.Logger
 }
 
-func NewItemHandler(items *repository.ItemRepo, lists *repository.ListRepo, store *storage.S3Client, notifier *notifications.Notifier) *ItemHandler {
-	return &ItemHandler{items: items, lists: lists, store: store, notifier: notifier}
+func NewItemHandler(items *repository.ItemRepo, lists *repository.ListRepo, store *storage.S3Client, notifier *notifications.Notifier, logger *slog.Logger) *ItemHandler {
+	return &ItemHandler{items: items, lists: lists, store: store, notifier: notifier, logger: logger}
 }
 
 // GET /lists/{list_id}/items

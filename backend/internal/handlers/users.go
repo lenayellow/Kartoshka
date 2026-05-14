@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -17,10 +18,11 @@ type UserHandler struct {
 	users  *repository.UserRepo
 	tokens *repository.PushTokenRepo
 	store  *storage.S3Client // nil если S3 не настроен
+	logger *slog.Logger
 }
 
-func NewUserHandler(users *repository.UserRepo, tokens *repository.PushTokenRepo, store *storage.S3Client) *UserHandler {
-	return &UserHandler{users: users, tokens: tokens, store: store}
+func NewUserHandler(users *repository.UserRepo, tokens *repository.PushTokenRepo, store *storage.S3Client, logger *slog.Logger) *UserHandler {
+	return &UserHandler{users: users, tokens: tokens, store: store, logger: logger}
 }
 
 // GET /users/me
