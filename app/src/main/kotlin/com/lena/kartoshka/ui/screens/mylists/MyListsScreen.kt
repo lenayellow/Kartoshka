@@ -30,9 +30,13 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -80,7 +84,9 @@ fun MyListsScreen(
     appRepository: AppRepository,
     onListClick: (String) -> Unit = {},
     onNewListClick: () -> Unit = {},
-    onSuggestionClick: (String) -> Unit = {}
+    onSuggestionClick: (String) -> Unit = {},
+    isLoading: Boolean = false,
+    error: String? = null
 ) {
     val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val scope = rememberCoroutineScope()
@@ -96,8 +102,14 @@ fun MyListsScreen(
         membersMap = map
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(error) {
+        if (error != null) snackbarHostState.showSnackbar(error)
+    }
+
+    Box(modifier.fillMaxSize()) {
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
     ) {
@@ -109,6 +121,10 @@ fun MyListsScreen(
                 onSettingsClick = { list -> listForSettings = list },
                 navBarBottom = navBarBottom
             )
+        } else if (isLoading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
         } else {
             LazyColumn(
                 contentPadding = PaddingValues(
@@ -119,13 +135,43 @@ fun MyListsScreen(
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(lists, key = { it.id }) { list ->
-                    MyListCard(
-                        list = list,
-                        members = membersMap[list.id] ?: emptyList(),
-                        onClick = { onListClick(list.id) },
-                        onShareClick = { shareListId = list.id }
-                    )
+                if (lists.isEmpty()) {
+                    item {
+                        Box(
+                            Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    imageVector = Icons.Filled.ShoppingCart,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(64.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                                )
+                                Spacer(Modifier.height(16.dp))
+                                Text(
+                                    text = stringResource(R.string.my_lists_empty_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = stringResource(R.string.my_lists_empty_subtitle),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    items(lists, key = { it.id }) { list ->
+                        MyListCard(
+                            list = list,
+                            members = membersMap[list.id] ?: emptyList(),
+                            onClick = { onListClick(list.id) },
+                            onShareClick = { shareListId = list.id }
+                        )
+                    }
                 }
                 item {
                     NewListCard(onClick = onNewListClick)
@@ -135,6 +181,8 @@ fun MyListsScreen(
                 }
             }
         }
+    }
+    SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 
     listForSettings?.let { list ->

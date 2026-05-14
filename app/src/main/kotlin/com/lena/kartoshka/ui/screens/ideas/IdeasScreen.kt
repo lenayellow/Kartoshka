@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.LocalDining
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -102,6 +103,14 @@ fun IdeasScreen(
         IdeasFilter.POPULAR -> sampleRecipes.sortedByDescending { it.likes }
         IdeasFilter.MY -> sampleRecipes.filter { it.isOwn || it.isSaved }
     }
+    val emptyTitle = if (activeFilter == IdeasFilter.MY)
+        stringResource(R.string.ideas_empty_my_title)
+    else
+        stringResource(R.string.ideas_empty_title)
+    val emptySubtitle = if (activeFilter == IdeasFilter.MY)
+        stringResource(R.string.ideas_empty_my_subtitle)
+    else
+        stringResource(R.string.ideas_empty_subtitle)
 
     val toggleSave: (Recipe) -> Unit = { recipe ->
         val index = sampleRecipes.indexOfFirst { it.id == recipe.id }
@@ -161,6 +170,35 @@ fun IdeasScreen(
                         onToggleSave = { toggleSave(recipe) },
                         onQuickAdd = { quickAddRecipe = recipe }
                     )
+                }
+                if (filteredRecipes.isEmpty()) {
+                    item {
+                        Box(
+                            Modifier.fillMaxWidth().padding(vertical = 64.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    imageVector = Icons.Filled.SearchOff,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(64.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                                )
+                                Spacer(Modifier.height(16.dp))
+                                Text(
+                                    text = emptyTitle,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = emptySubtitle,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
