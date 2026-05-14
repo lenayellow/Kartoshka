@@ -2,11 +2,15 @@
 <resources>
     <string name="app_name">Супер Списки</string>
     <string name="my_lists_title">My lists</string>
+    <string name="my_lists_empty_title">No lists yet</string>
+    <string name="my_lists_empty_subtitle">Lists will appear here</string>
     <string name="edit">Edit</string>
     <string name="new_list">+ New List</string>
     <string name="suggestions_title">Suggestions</string>
     <string name="back_to_lists">Lists</string>
     <string name="add_item_hint">I need…</string>
+    <string name="list_detail_empty_title">List is empty</string>
+    <string name="list_detail_empty_subtitle">Add your first item</string>
     <string name="done">Done</string>
     <string name="item_note_hint">Quantity, note…</string>
     <string name="item_details_about">More about %s</string>
@@ -94,6 +98,10 @@
     <string name="ideas_active_list">Active list</string>
     <string name="ideas_add_button">Add ingredients (%1$d)</string>
     <string name="ideas_success">Done!</string>
+    <string name="ideas_empty_title">Nothing found</string>
+    <string name="ideas_empty_subtitle">Try a different filter</string>
+    <string name="ideas_empty_my_title">Your collection is empty</string>
+    <string name="ideas_empty_my_subtitle">Save recipes you like</string>
     <string name="create_recipe_save">SAVE</string>
     <string name="create_recipe_name_hint">Template name</string>
     <string name="create_recipe_description_hint">Description</string>
@@ -131,6 +139,9 @@
     <string name="profile_delete_account">Delete account</string>
     <string name="profile_logout">Log out</string>
     <string name="profile_pick_list">Select a list</string>
+    <string name="profile_no_lists">No lists available</string>
+    <string name="profile_avatar_error">Couldn\'t load avatar</string>
+    <string name="profile_qr_error">Couldn\'t generate QR code</string>
     <string name="profile_share_copy">Copy link</string>
     <string name="profile_delete_account_confirm">Are you sure you want to delete your account? This action cannot be undone.</string>
     <string name="crop_ok" translatable="false">OK</string>

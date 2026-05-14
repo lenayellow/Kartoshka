@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.widget.Toast
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import android.net.Uri
@@ -67,6 +68,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -139,11 +141,16 @@ fun ProfileScreen(
     var avatarBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     LaunchedEffect(avatarPath) {
         avatarBitmap = if (avatarPath != null) {
-            withContext(Dispatchers.IO) {
-                runCatching { BitmapFactory.decodeFile(avatarPath)?.asImageBitmap() }.getOrNull()
+            val result = withContext(Dispatchers.IO) {
+                runCatching { BitmapFactory.decodeFile(avatarPath)?.asImageBitmap() }
             }
+            result.onFailure {
+                Toast.makeText(context, context.getString(R.string.profile_avatar_error), Toast.LENGTH_SHORT).show()
+            }
+            result.getOrNull()
         } else null
     }
+    val isAvatarLoading = avatarPath != null && avatarBitmap == null
 
     val imageLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -216,6 +223,13 @@ fun ProfileScreen(
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(56.dp)
+                            )
+                        }
+                        if (isAvatarLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(32.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -547,6 +561,13 @@ fun ProfileScreen(
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
                 )
+                if (allLists.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.profile_no_lists),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp)
+                    )
+                }
                 allLists.forEach { list ->
                     Row(
                         modifier = Modifier
@@ -666,7 +687,7 @@ fun ProfileScreen(
         var cloudtipsQrBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
 
         LaunchedEffect(Unit) {
-            sbpQrBitmap = withContext(Dispatchers.IO) {
+            val sbpResult = withContext(Dispatchers.IO) {
                 runCatching {
                     val size = 512
                     val bitMatrix = MultiFormatWriter().encode(phone, BarcodeFormat.QR_CODE, size, size)
@@ -675,9 +696,13 @@ fun ProfileScreen(
                         else android.graphics.Color.WHITE
                     }
                     Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888).asImageBitmap()
-                }.getOrNull()
+                }
             }
-            cloudtipsQrBitmap = withContext(Dispatchers.IO) {
+            sbpResult.onFailure {
+                Toast.makeText(context, context.getString(R.string.profile_qr_error), Toast.LENGTH_SHORT).show()
+            }
+            sbpQrBitmap = sbpResult.getOrNull()
+            val cloudtipsResult = withContext(Dispatchers.IO) {
                 runCatching {
                     val size = 512
                     val bitMatrix = MultiFormatWriter().encode(cloudtipsUrl, BarcodeFormat.QR_CODE, size, size)
@@ -686,8 +711,12 @@ fun ProfileScreen(
                         else android.graphics.Color.WHITE
                     }
                     Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888).asImageBitmap()
-                }.getOrNull()
+                }
             }
+            cloudtipsResult.onFailure {
+                Toast.makeText(context, context.getString(R.string.profile_qr_error), Toast.LENGTH_SHORT).show()
+            }
+            cloudtipsQrBitmap = cloudtipsResult.getOrNull()
         }
 
         ModalBottomSheet(

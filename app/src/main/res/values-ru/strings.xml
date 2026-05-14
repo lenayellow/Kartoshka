@@ -2,11 +2,15 @@
 <resources>
     <string name="app_name">Супер Списки</string>
     <string name="my_lists_title">Мои списки</string>
+    <string name="my_lists_empty_title">Нет списков</string>
+    <string name="my_lists_empty_subtitle">Списки появятся здесь</string>
     <string name="edit">Редактировать</string>
     <string name="new_list">+ Новый список</string>
     <string name="suggestions_title">Рекомендации для добавления в список</string>
     <string name="back_to_lists">Списки</string>
     <string name="add_item_hint">Мне нужно…</string>
+    <string name="list_detail_empty_title">Список пуст</string>
+    <string name="list_detail_empty_subtitle">Добавьте первый товар</string>
     <string name="done">Готово</string>
     <string name="item_note_hint">Количество, описание…</string>
     <string name="item_details_about">Подробнее о товаре %s</string>
@@ -94,6 +98,10 @@
     <string name="ideas_active_list">Активный список</string>
     <string name="ideas_add_button">Добавить ингредиенты (%1$d)</string>
     <string name="ideas_success">Все получилось.</string>
+    <string name="ideas_empty_title">Ничего не найдено</string>
+    <string name="ideas_empty_subtitle">Попробуйте другой фильтр</string>
+    <string name="ideas_empty_my_title">В подборке пока пусто</string>
+    <string name="ideas_empty_my_subtitle">Сохраняйте рецепты, которые вам нравятся</string>
     <string name="create_recipe_save">СОХРАНИТЬ</string>
     <string name="create_recipe_name_hint">Имя шаблона</string>
     <string name="create_recipe_description_hint">Описание</string>
@@ -121,6 +129,9 @@
     <string name="profile_delete_account">Удалить учётную запись</string>
     <string name="profile_logout">Выйти</string>
     <string name="profile_pick_list">Выберите список</string>
+    <string name="profile_no_lists">Нет доступных списков</string>
+    <string name="profile_avatar_error">Не удалось загрузить аватар</string>
+    <string name="profile_qr_error">Не удалось создать QR-код</string>
     <string name="profile_share_copy">Скопировать ссылку</string>
     <string name="profile_delete_account_confirm">Вы уверены, что хотите удалить учётную запись? Это действие нельзя отменить.</string>
     <string name="profile_support_dev">Поддержать разработчика</string>

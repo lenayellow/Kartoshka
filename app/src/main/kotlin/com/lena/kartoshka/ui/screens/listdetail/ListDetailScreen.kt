@@ -64,6 +64,7 @@ import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Style
 import androidx.compose.material.icons.filled.SwapVert
+import androidx.compose.material.icons.outlined.CheckBoxOutlineBlank
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -75,6 +76,9 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -161,7 +165,9 @@ fun ListDetailScreen(
     onAvatarChange: (String?) -> Unit = {},
     userName: String? = null,
     userEmail: String? = null,
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    isLoading: Boolean = false,
+    error: String? = null
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -202,6 +208,12 @@ fun ListDetailScreen(
     LaunchedEffect(list.id) {
         members = appRepository.getMembers(list.id)
     }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(error) {
+        if (error != null) snackbarHostState.showSnackbar(error)
+    }
+
     var showCategoryPicker by remember { mutableStateOf(false) }
     var showMoveItemPicker by remember { mutableStateOf(false) }
     var photoTargetItem by remember { mutableStateOf<Item?>(null) }
@@ -341,6 +353,16 @@ fun ListDetailScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp)
             ) {
+                if (isLoading) {
+                    item(span = { GridItemSpan(3) }) {
+                        Box(
+                            Modifier.fillMaxWidth().padding(vertical = 64.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                }
                 items(activeItems, key = { it.id }) { item ->
                     ItemCard(
                         item = item,
@@ -354,6 +376,35 @@ fun ListDetailScreen(
                             }
                         }
                     )
+                }
+                if (activeItems.isEmpty() && !isLoading) {
+                    item(span = { GridItemSpan(3) }) {
+                        Box(
+                            Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    imageVector = Icons.Outlined.CheckBoxOutlineBlank,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(64.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                                )
+                                Spacer(Modifier.height(16.dp))
+                                Text(
+                                    text = stringResource(R.string.list_detail_empty_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = stringResource(R.string.list_detail_empty_subtitle),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                )
+                            }
+                        }
+                    }
                 }
                 item(span = { GridItemSpan(3) }) {
                     LoyaltyCardsSection(
@@ -408,6 +459,7 @@ fun ListDetailScreen(
                 justAddedItem = newItem
             })
         }
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
 
         if (showSortScreen) {
             SortScreen(
