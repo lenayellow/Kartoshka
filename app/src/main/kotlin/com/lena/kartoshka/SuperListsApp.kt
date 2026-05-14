@@ -5,7 +5,7 @@ import android.util.Log
 import io.appmetrica.analytics.AppMetrica
 import io.appmetrica.analytics.AppMetricaConfig
 
-class KartoshkaApp : Application() {
+class SuperListsApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
@@ -15,7 +15,7 @@ class KartoshkaApp : Application() {
     private fun initAppMetrica() {
         val apiKey = BuildConfig.APPMETRICA_API_KEY
         if (apiKey.isEmpty()) {
-            Log.w("KartoshkaApp", "APPMETRICA_API_KEY is not set — crash reporting disabled")
+            Log.w("SuperListsApp", "APPMETRICA_API_KEY is not set — crash reporting disabled")
             return
         }
 

@@ -1,4 +1,6 @@
-# Kartoshka — Super Списки
+# Super Lists / Супер Списки
+
+Shared shopping lists app for Android. Internal codename: Kartoshka.
 
 Локальное Android-приложение для совместных списков покупок.
 

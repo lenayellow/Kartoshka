@@ -38,7 +38,7 @@ import com.lena.kartoshka.ui.screens.listdetail.ListDetailScreen
 import com.lena.kartoshka.ui.screens.mylists.MyListsScreen
 import com.lena.kartoshka.ui.screens.newlist.NewListScreen
 import com.lena.kartoshka.ui.screens.share.ShareScreen
-import com.lena.kartoshka.ui.theme.KartoshkaTheme
+import com.lena.kartoshka.ui.theme.SuperListsTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 
@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
             val avatarPath by userPrefsRepository.avatarPath.collectAsState()
             val userName by userPrefsRepository.userName.collectAsState()
             val userEmail by userPrefsRepository.userEmail.collectAsState()
-            KartoshkaTheme(darkTheme = isDarkTheme) {
+            SuperListsTheme(darkTheme = isDarkTheme) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val navController = rememberNavController()
                     val scope = rememberCoroutineScope()

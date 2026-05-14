@@ -88,7 +88,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 @Composable
-fun KartoshkaTheme(
+fun SuperListsTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
@@ -106,7 +106,7 @@ fun KartoshkaTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = KartoshkaTypography,
+        typography = SuperListsTypography,
         content = content
     )
 }

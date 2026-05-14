@@ -3,7 +3,7 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0.."
 
 echo ===========================================================
-echo  Kartoshka - Release Bundle Builder
+echo  Super Lists / Супер Списки - Release Bundle Builder
 echo ===========================================================
 echo.
 
