@@ -317,7 +317,7 @@ fun AuthScreen(
             colors = ButtonDefaults.outlinedButtonColors(contentColor = yandexRed)
         ) {
             Text(
-                text = "Я",
+                text = stringResource(R.string.auth_yandex_button_letter),
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
                 fontSize = 18.sp
             )

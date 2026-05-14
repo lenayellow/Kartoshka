@@ -54,6 +54,7 @@
     <string name="list_menu_settings">Настройки списка</string>
     <string name="list_menu_cards">Карты</string>
     <string name="cancel">Отменить</string>
+    <string name="common_ok">ОК</string>
     <string name="add_item_button">Добавить</string>
     <string name="delete_item">Удалить добавленный товар</string>
     <string name="delete_item_confirm">Действительно удалить этот товар?</string>
@@ -184,6 +185,7 @@
     <string name="auth_error_short_password">Пароль должен быть не менее 8 символов</string>
     <string name="auth_error_generic">Что-то пошло не так, попробуйте ещё раз</string>
     <string name="auth_yandex_button">Войти с Яндекс ID</string>
+    <string name="auth_yandex_button_letter">Я</string>
     <string name="auth_or">или</string>
     <string name="auth_forgot_password">Забыл пароль?</string>
     <string name="auth_forgot_dialog_title">Сброс пароля</string>

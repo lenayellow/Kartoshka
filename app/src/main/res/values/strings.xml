@@ -54,6 +54,7 @@
     <string name="list_menu_settings">List settings</string>
     <string name="list_menu_cards">Cards</string>
     <string name="cancel">Cancel</string>
+    <string name="common_ok">OK</string>
     <string name="add_item_button">Add</string>
     <string name="delete_item">Delete item</string>
     <string name="delete_item_confirm">Really delete this item?</string>
@@ -189,6 +190,7 @@
     <string name="auth_error_short_password">Password must be at least 8 characters</string>
     <string name="auth_error_generic">Something went wrong, try again</string>
     <string name="auth_yandex_button">Sign in with Yandex ID</string>
+    <string name="auth_yandex_button_letter">Я</string>
     <string name="auth_or">or</string>
     <string name="auth_forgot_password">Forgot password?</string>
     <string name="auth_forgot_dialog_title">Reset password</string>

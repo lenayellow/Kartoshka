@@ -272,7 +272,7 @@ private fun RecipeCard(
             appendLine(recipe.title)
             appendLine("${recipe.author} — ${recipe.tagline}")
             appendLine()
-            appendLine("Ингредиенты:")
+            appendLine("${context.getString(R.string.ideas_ingredients)}:")
             recipe.ingredients.forEach { appendLine("• ${it.name} — ${it.amount}") }
         }
         context.startActivity(
@@ -374,7 +374,7 @@ private fun RecipeDetailOverlay(
             appendLine(recipe.title)
             appendLine("${recipe.author} — ${recipe.tagline}")
             appendLine()
-            appendLine("Ингредиенты:")
+            appendLine("${context.getString(R.string.ideas_ingredients)}:")
             recipe.ingredients.forEach { appendLine("• ${it.name} — ${it.amount}") }
         }
         context.startActivity(

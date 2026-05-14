@@ -405,7 +405,7 @@ fun CreateRecipeScreen(onClose: () -> Unit) {
                             Text(stringResource(R.string.cancel).uppercase(), color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
                         }
                         TextButton(onClick = { link = linkInput; showLinkDialog = false }) {
-                            Text("OK", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.common_ok), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
