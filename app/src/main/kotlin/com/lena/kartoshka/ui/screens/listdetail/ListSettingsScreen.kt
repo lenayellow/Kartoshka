@@ -59,8 +59,6 @@ import com.lena.kartoshka.data.itemCategories
 import com.lena.kartoshka.data.sort.SortRepository
 import kotlinx.coroutines.launch
 
-private val DeleteRed = Color(0xFFE53935)
-
 @Composable
 fun ListSettingsScreen(
     list: ShoppingList,
@@ -213,7 +211,7 @@ fun ListSettingsScreen(
             // Delete button
             Button(
                 onClick = { showDeleteConfirm = true },
-                colors = ButtonDefaults.buttonColors(containerColor = DeleteRed),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -269,7 +267,7 @@ fun ListSettingsScreen(
                             }) {
                                 Text(
                                     text = stringResource(R.string.delete_confirm_yes),
-                                    color = DeleteRed,
+                                    color = MaterialTheme.colorScheme.error,
                                     fontWeight = FontWeight.Bold
                                 )
                             }

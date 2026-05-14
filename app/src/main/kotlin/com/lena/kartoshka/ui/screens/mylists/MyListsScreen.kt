@@ -382,7 +382,7 @@ private fun MyListCard(
 @Composable
 private fun ItemCountBadge(count: Int) {
     Surface(
-        color = BadgeRed,
+        color = MaterialTheme.colorScheme.error,
         shape = RoundedCornerShape(50)
     ) {
         Text(
@@ -494,4 +494,3 @@ private fun NewListCard(onClick: () -> Unit) {
     }
 }
 
-private val BadgeRed = Color(0xFFE55353)

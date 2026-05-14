@@ -119,8 +119,9 @@
     <string name="create_recipe_add_more">+ Добавить ещё</string>
 
     <string name="profile_theme">Тема</string>
-    <string name="profile_theme_dark">Тёмная</string>
+    <string name="profile_theme_system">Как в системе</string>
     <string name="profile_theme_light">Светлая</string>
+    <string name="profile_theme_dark">Тёмная</string>
     <string name="profile_rate">Оценить нас в RuStore</string>
     <string name="profile_account">Настройки профиля</string>
     <string name="profile_change_password">Изменить пароль</string>

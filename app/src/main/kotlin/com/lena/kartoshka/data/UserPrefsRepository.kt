@@ -8,8 +8,10 @@ import kotlinx.coroutines.flow.asStateFlow
 class UserPrefsRepository(context: Context) {
     private val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
 
-    private val _isDark = MutableStateFlow(prefs.getBoolean("is_dark", true))
-    val isDark: StateFlow<Boolean> = _isDark.asStateFlow()
+    private val _themeMode = MutableStateFlow(
+        ThemeMode.entries.find { it.name == prefs.getString("theme_mode", null) } ?: ThemeMode.SYSTEM
+    )
+    val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 
     private val _avatarPath = MutableStateFlow<String?>(prefs.getString("avatar_path", null))
     val avatarPath: StateFlow<String?> = _avatarPath.asStateFlow()
@@ -20,9 +22,9 @@ class UserPrefsRepository(context: Context) {
     private val _userEmail = MutableStateFlow<String?>(prefs.getString("user_email", null))
     val userEmail: StateFlow<String?> = _userEmail.asStateFlow()
 
-    fun setDark(dark: Boolean) {
-        prefs.edit().putBoolean("is_dark", dark).apply()
-        _isDark.value = dark
+    fun setThemeMode(mode: ThemeMode) {
+        prefs.edit().putString("theme_mode", mode.name).apply()
+        _themeMode.value = mode
     }
 
     fun saveAvatarPath(path: String?) {

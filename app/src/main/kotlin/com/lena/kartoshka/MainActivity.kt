@@ -38,6 +38,7 @@ import com.lena.kartoshka.ui.screens.listdetail.ListDetailScreen
 import com.lena.kartoshka.ui.screens.mylists.MyListsScreen
 import com.lena.kartoshka.ui.screens.newlist.NewListScreen
 import com.lena.kartoshka.ui.screens.share.ShareScreen
+import com.lena.kartoshka.data.ThemeMode
 import com.lena.kartoshka.ui.theme.SuperListsTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
@@ -73,11 +74,11 @@ class MainActivity : ComponentActivity() {
         tokenStore // triggers lazy init → ApiClient.init()
         enableEdgeToEdge()
         setContent {
-            val isDarkTheme by userPrefsRepository.isDark.collectAsState()
+            val themeMode by userPrefsRepository.themeMode.collectAsState()
             val avatarPath by userPrefsRepository.avatarPath.collectAsState()
             val userName by userPrefsRepository.userName.collectAsState()
             val userEmail by userPrefsRepository.userEmail.collectAsState()
-            SuperListsTheme(darkTheme = isDarkTheme) {
+            SuperListsTheme(themeMode = themeMode) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val navController = rememberNavController()
                     val scope = rememberCoroutineScope()
@@ -214,8 +215,8 @@ class MainActivity : ComponentActivity() {
                                 sortRepository = sortRepository,
                                 appRepository = appRepository,
                                 onBack = { navController.popBackStack() },
-                                isDarkTheme = isDarkTheme,
-                                onThemeChange = { userPrefsRepository.setDark(it) },
+                                themeMode = themeMode,
+                                onThemeChange = { userPrefsRepository.setThemeMode(it) },
                                 avatarPath = avatarPath,
                                 onAvatarChange = { userPrefsRepository.saveAvatarPath(it) },
                                 userName = userName,
