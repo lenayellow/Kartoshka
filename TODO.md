@@ -68,3 +68,21 @@ Android-сторона уже умеет показывать корректны
 Наблюдалось при добавлении товаров "Багет", "Пицца". Тело ответа:
 "ошибка создания товара". Логов сервера нет, нужны structured logs
 (slog в JSON) со стороны Go-функции, чтобы понять причину.
+
+---
+
+## Future features (post-MVP)
+
+### List push messages (Sprint 5+)
+
+Allow users to send a short push notification to all members of a shared list.
+
+UI: bottom sheet with 3 preset messages + 1 custom short message field.
+
+Preset examples:
+- "Я обновил список"
+- "Список пуст, я всё купил"
+- "Не забудь зайти в магазин"
+
+Backend: POST /lists/{id}/notify with body { type: "preset"|"custom", text: string }
+→ fanout to all list_members via FCM/RuStore.
