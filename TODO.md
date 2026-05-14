@@ -1,3 +1,28 @@
+## Sprint 4 — Security audit
+
+### [Auto Backup security] Отключить бэкап EncryptedSharedPreferences с токенами
+
+`android:allowBackup=true` (дефолт) синхронизирует все SharedPreferences,
+включая `kartoshka_tokens` с access/refresh токенами, в Google Drive.
+
+Последствия:
+- Утечка credentials через third-party облако для приложения с auth через Яндекс ID
+- Возможный compliance issue с 152-ФЗ
+- Объясняет, почему пользователь оставался залогинен после переустановки
+  приложения (наблюдалось при тестировании в Sprint 2.4)
+
+Решение:
+1. В `AndroidManifest.xml` на тег `<application>` добавить:
+   - `android:fullBackupContent="@xml/backup_rules"` (API 23+)
+   - `android:dataExtractionRules="@xml/data_extraction_rules"` (API 31+)
+2. Создать `res/xml/backup_rules.xml`:
+   - Разрешить бэкап Room БД (`kartoshka.db`) — данные списков восстанавливаются
+   - Запретить бэкап `kartoshka_tokens` — токены без Keystore-ключа всё равно
+     бесполезны, но хранить их в облаке не следует
+3. Создать `res/xml/data_extraction_rules.xml` (то же самое для API 31+)
+
+---
+
 ## Sprint 5 — Backend
 
 ### Go-тесты
