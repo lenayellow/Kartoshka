@@ -189,4 +189,7 @@ dependencies {
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging)
     implementation(libs.security.crypto)
+
+    // WorkManager
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
 }
