@@ -70,7 +70,9 @@ import com.lena.kartoshka.data.sampleSuggestions
 import com.lena.kartoshka.data.sort.SortRepository
 import com.lena.kartoshka.ui.components.MemberAvatarRow
 import com.lena.kartoshka.ui.screens.listdetail.ShareListSheet
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.lena.kartoshka.data.SyncRepository
 import com.lena.kartoshka.ui.screens.listdetail.ListSettingsScreen
 import com.lena.kartoshka.ui.screens.newlist.NewListScreen
 import sh.calvin.reorderable.ReorderableItem
@@ -86,7 +88,8 @@ fun MyListsScreen(
     onNewListClick: () -> Unit = {},
     onSuggestionClick: (String) -> Unit = {},
     isLoading: Boolean = false,
-    error: String? = null
+    error: String? = null,
+    syncRepository: SyncRepository? = null
 ) {
     val navBarBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val scope = rememberCoroutineScope()
@@ -105,6 +108,12 @@ fun MyListsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(error) {
         if (error != null) snackbarHostState.showSnackbar(error)
+    }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(30_000L)
+            runCatching { syncRepository?.syncLists() }
+        }
     }
 
     Box(modifier.fillMaxSize()) {

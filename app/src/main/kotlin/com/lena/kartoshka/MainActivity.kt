@@ -47,7 +47,7 @@ class MainActivity : ComponentActivity() {
 
     private val sortRepository by lazy { LocalSortRepository(applicationContext) }
     private val lastUsedRepository by lazy { LastUsedRepository(applicationContext) }
-    private val appRepository by lazy { AppRepository(KartoshkaDatabase.get(applicationContext), ApiClient.api) }
+    private val appRepository by lazy { AppRepository(KartoshkaDatabase.get(applicationContext), ApiClient.api, applicationContext) }
     private val userPrefsRepository by lazy { UserPrefsRepository(applicationContext) }
     private val tokenStore by lazy {
         TokenStore(applicationContext).also { ApiClient.init(it) }
@@ -167,7 +167,8 @@ class MainActivity : ComponentActivity() {
                                 onNewListClick = { navController.navigate("new_list") },
                                 onSuggestionClick = { name ->
                                     navController.navigate("new_list?name=${Uri.encode(name)}")
-                                }
+                                },
+                                syncRepository = syncRepository
                             )
                         }
                         composable(
@@ -234,7 +235,8 @@ class MainActivity : ComponentActivity() {
                                             popUpTo(0) { inclusive = true }
                                         }
                                     }
-                                }
+                                },
+                                syncRepository = syncRepository
                             )
                         }
                     }

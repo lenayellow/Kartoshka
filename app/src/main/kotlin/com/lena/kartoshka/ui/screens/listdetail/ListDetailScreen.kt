@@ -119,8 +119,10 @@ import com.lena.kartoshka.ui.screens.newlist.NewListScreen
 import com.lena.kartoshka.ui.screens.profile.ImageCropScreen
 import com.lena.kartoshka.ui.screens.profile.ProfileScreen
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.lena.kartoshka.data.SyncRepository
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -165,7 +167,8 @@ fun ListDetailScreen(
     userEmail: String? = null,
     onLogout: () -> Unit = {},
     isLoading: Boolean = false,
-    error: String? = null
+    error: String? = null,
+    syncRepository: SyncRepository? = null
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -210,6 +213,12 @@ fun ListDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(error) {
         if (error != null) snackbarHostState.showSnackbar(error)
+    }
+    LaunchedEffect(list.id) {
+        while (true) {
+            delay(30_000L)
+            runCatching { syncRepository?.syncItems(list.id) }
+        }
     }
 
     var showCategoryPicker by remember { mutableStateOf(false) }
