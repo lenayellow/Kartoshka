@@ -16,6 +16,8 @@ object ApiClient {
 
     private lateinit var tokenStore: TokenStore
 
+    val isInitialized: Boolean get() = ::tokenStore.isInitialized
+
     fun init(store: TokenStore) {
         tokenStore = store
     }

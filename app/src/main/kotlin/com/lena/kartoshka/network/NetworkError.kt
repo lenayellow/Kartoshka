@@ -101,6 +101,14 @@ fun Throwable.toNetworkError(): NetworkError = when (this) {
     else -> NetworkError.Unknown(serverMessage = message)
 }
 
+fun NetworkError.isRetryable() = when (this) {
+    is NetworkError.NoConnection,
+    is NetworkError.ServerError,
+    is NetworkError.TooManyRequests,
+    is NetworkError.Unknown -> true
+    else -> false
+}
+
 private fun parseErrorCode(body: String?): String? {
     if (body.isNullOrBlank()) return null
     return try {

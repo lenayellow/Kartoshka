@@ -1,18 +1,23 @@
 package com.lena.kartoshka.data
 
+import android.content.Context
 import androidx.compose.ui.graphics.Color
+import com.google.gson.Gson
 import com.lena.kartoshka.analytics.Analytics
 import com.lena.kartoshka.data.db.ItemEntity
 import com.lena.kartoshka.data.db.KartoshkaDatabase
+import com.lena.kartoshka.data.db.PendingOpEntity
 import com.lena.kartoshka.data.db.PurchaseHistoryEntity
 import com.lena.kartoshka.data.db.ShoppingListEntity
 import com.lena.kartoshka.data.db.toEntity
+import com.lena.kartoshka.data.sync.SyncPendingOpsWorker
 import com.lena.kartoshka.network.ApiService
 import com.lena.kartoshka.network.CreateInviteRequest
 import com.lena.kartoshka.network.CreateItemRequest
 import com.lena.kartoshka.network.CreateListRequest
 import com.lena.kartoshka.network.UpdateItemRequest
 import com.lena.kartoshka.network.UpdateListRequest
+import com.lena.kartoshka.network.isRetryable
 import com.lena.kartoshka.network.toNetworkError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,12 +25,21 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class AppRepository(
     private val db: KartoshkaDatabase,
-    private val api: ApiService? = null
+    private val api: ApiService? = null,
+    private val context: Context? = null
 ) {
     private val bgScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val gson = Gson()
+    private val pendingOpDao = db.pendingOpDao()
+
+    private suspend fun savePendingAndEnqueue(op: PendingOpEntity) {
+        pendingOpDao.insert(op)
+        context?.let { SyncPendingOpsWorker.enqueue(it) }
+    }
 
     // --- Lists ---
 
@@ -38,11 +52,24 @@ class AppRepository(
             ShoppingListEntity(list.id, list.name, list.color.value.toLong(), position)
         )
         api?.let { api -> bgScope.launch {
-            runCatching {
+            try {
                 api.createList(CreateListRequest(list.id, list.name, list.color.value.toLong(), position))
-            }.onFailure { e ->
+            } catch (e: Exception) {
                 val err = e.toNetworkError()
-                Analytics.trackError(e, "AppRepository.insertList: ${err::class.simpleName} code=${err.httpCode}")
+                if (err.isRetryable()) {
+                    savePendingAndEnqueue(PendingOpEntity(
+                        id = UUID.randomUUID().toString(),
+                        op_type = PendingOpEntity.INSERT_LIST,
+                        payload_json = gson.toJson(PendingOpPayload(
+                            listId = list.id, listName = list.name,
+                            listColor = list.color.value.toLong(), listPosition = position
+                        )),
+                        list_id = list.id,
+                        created_at = System.currentTimeMillis()
+                    ))
+                } else {
+                    Analytics.trackError(e, "AppRepository.insertList: ${err::class.simpleName} code=${err.httpCode}")
+                }
             }
         }}
     }
@@ -50,11 +77,24 @@ class AppRepository(
     suspend fun updateList(list: ShoppingList) {
         db.shoppingListDao().update(list.id, list.name, list.color.value.toLong())
         api?.let { api -> bgScope.launch {
-            runCatching {
+            try {
                 api.updateList(list.id, UpdateListRequest(list.name, list.color.value.toLong()))
-            }.onFailure { e ->
+            } catch (e: Exception) {
                 val err = e.toNetworkError()
-                Analytics.trackError(e, "AppRepository.updateList: ${err::class.simpleName} code=${err.httpCode}")
+                if (err.isRetryable()) {
+                    savePendingAndEnqueue(PendingOpEntity(
+                        id = UUID.randomUUID().toString(),
+                        op_type = PendingOpEntity.UPDATE_LIST,
+                        payload_json = gson.toJson(PendingOpPayload(
+                            listId = list.id, listName = list.name,
+                            listColor = list.color.value.toLong()
+                        )),
+                        list_id = list.id,
+                        created_at = System.currentTimeMillis()
+                    ))
+                } else {
+                    Analytics.trackError(e, "AppRepository.updateList: ${err::class.simpleName} code=${err.httpCode}")
+                }
             }
         }}
     }
@@ -62,9 +102,21 @@ class AppRepository(
     suspend fun deleteList(id: String) {
         db.shoppingListDao().deleteById(id)
         api?.let { api -> bgScope.launch {
-            runCatching { api.deleteList(id) }.onFailure { e ->
+            try {
+                api.deleteList(id)
+            } catch (e: Exception) {
                 val err = e.toNetworkError()
-                Analytics.trackError(e, "AppRepository.deleteList: ${err::class.simpleName} code=${err.httpCode}")
+                if (err.isRetryable()) {
+                    savePendingAndEnqueue(PendingOpEntity(
+                        id = UUID.randomUUID().toString(),
+                        op_type = PendingOpEntity.DELETE_LIST,
+                        payload_json = gson.toJson(PendingOpPayload(listId = id)),
+                        list_id = id,
+                        created_at = System.currentTimeMillis()
+                    ))
+                } else {
+                    Analytics.trackError(e, "AppRepository.deleteList: ${err::class.simpleName} code=${err.httpCode}")
+                }
             }
         }}
     }
@@ -77,16 +129,33 @@ class AppRepository(
     suspend fun insertItem(item: Item, listId: String) {
         db.itemDao().insert(item.toEntity(listId))
         api?.let { api -> bgScope.launch {
-            runCatching {
+            try {
                 api.createItem(listId, CreateItemRequest(
                     name = item.name,
                     tags = item.tags.joinToString(",") { it.name },
                     note = item.note,
                     category_id = item.categoryId ?: ""
                 ))
-            }.onFailure { e ->
+            } catch (e: Exception) {
                 val err = e.toNetworkError()
-                Analytics.trackError(e, "AppRepository.insertItem: ${err::class.simpleName} code=${err.httpCode}")
+                if (err.isRetryable()) {
+                    savePendingAndEnqueue(PendingOpEntity(
+                        id = UUID.randomUUID().toString(),
+                        op_type = PendingOpEntity.INSERT_ITEM,
+                        payload_json = gson.toJson(PendingOpPayload(
+                            itemId = item.id, listId = listId,
+                            itemName = item.name,
+                            itemTags = item.tags.joinToString(",") { it.name },
+                            itemNote = item.note,
+                            itemCategoryId = item.categoryId,
+                            itemImagePath = item.imagePath
+                        )),
+                        list_id = listId,
+                        created_at = System.currentTimeMillis()
+                    ))
+                } else {
+                    Analytics.trackError(e, "AppRepository.insertItem: ${err::class.simpleName} code=${err.httpCode}")
+                }
             }
         }}
     }
@@ -95,16 +164,33 @@ class AppRepository(
         db.itemDao().insertAll(items.map { it.toEntity(listId) })
         api?.let { api -> bgScope.launch {
             items.forEach { item ->
-                runCatching {
+                try {
                     api.createItem(listId, CreateItemRequest(
                         name = item.name,
                         tags = item.tags.joinToString(",") { it.name },
                         note = item.note,
                         category_id = item.categoryId ?: ""
                     ))
-                }.onFailure { e ->
+                } catch (e: Exception) {
                     val err = e.toNetworkError()
-                    Analytics.trackError(e, "AppRepository.insertItems: ${err::class.simpleName} code=${err.httpCode}")
+                    if (err.isRetryable()) {
+                        savePendingAndEnqueue(PendingOpEntity(
+                            id = UUID.randomUUID().toString(),
+                            op_type = PendingOpEntity.INSERT_ITEM,
+                            payload_json = gson.toJson(PendingOpPayload(
+                                itemId = item.id, listId = listId,
+                                itemName = item.name,
+                                itemTags = item.tags.joinToString(",") { it.name },
+                                itemNote = item.note,
+                                itemCategoryId = item.categoryId,
+                                itemImagePath = item.imagePath
+                            )),
+                            list_id = listId,
+                            created_at = System.currentTimeMillis()
+                        ))
+                    } else {
+                        Analytics.trackError(e, "AppRepository.insertItems: ${err::class.simpleName} code=${err.httpCode}")
+                    }
                 }
             }
         }}
@@ -113,16 +199,33 @@ class AppRepository(
     suspend fun updateItem(item: Item, listId: String) {
         db.itemDao().update(item.toEntity(listId))
         api?.let { api -> bgScope.launch {
-            runCatching {
+            try {
                 api.updateItem(listId, item.id, UpdateItemRequest(
                     name = item.name,
                     tags = item.tags.joinToString(",") { it.name },
                     note = item.note,
                     category_id = item.categoryId ?: ""
                 ))
-            }.onFailure { e ->
+            } catch (e: Exception) {
                 val err = e.toNetworkError()
-                Analytics.trackError(e, "AppRepository.updateItem: ${err::class.simpleName} code=${err.httpCode}")
+                if (err.isRetryable()) {
+                    savePendingAndEnqueue(PendingOpEntity(
+                        id = UUID.randomUUID().toString(),
+                        op_type = PendingOpEntity.UPDATE_ITEM,
+                        payload_json = gson.toJson(PendingOpPayload(
+                            itemId = item.id, listId = listId,
+                            itemName = item.name,
+                            itemTags = item.tags.joinToString(",") { it.name },
+                            itemNote = item.note,
+                            itemCategoryId = item.categoryId,
+                            itemImagePath = item.imagePath
+                        )),
+                        list_id = listId,
+                        created_at = System.currentTimeMillis()
+                    ))
+                } else {
+                    Analytics.trackError(e, "AppRepository.updateItem: ${err::class.simpleName} code=${err.httpCode}")
+                }
             }
         }}
     }
@@ -131,9 +234,23 @@ class AppRepository(
         val entity = db.itemDao().getById(itemId)
         db.itemDao().deleteById(itemId)
         api?.let { api -> entity?.let { e -> bgScope.launch {
-            runCatching { api.deleteItem(e.listId, itemId) }.onFailure { ex ->
+            try {
+                api.deleteItem(e.listId, itemId)
+            } catch (ex: Exception) {
                 val err = ex.toNetworkError()
-                Analytics.trackError(ex, "AppRepository.deleteItem: ${err::class.simpleName} code=${err.httpCode}")
+                if (err.isRetryable()) {
+                    savePendingAndEnqueue(PendingOpEntity(
+                        id = UUID.randomUUID().toString(),
+                        op_type = PendingOpEntity.DELETE_ITEM,
+                        payload_json = gson.toJson(PendingOpPayload(
+                            itemId = itemId, listId = e.listId
+                        )),
+                        list_id = e.listId,
+                        created_at = System.currentTimeMillis()
+                    ))
+                } else {
+                    Analytics.trackError(ex, "AppRepository.deleteItem: ${err::class.simpleName} code=${err.httpCode}")
+                }
             }
         }}}
     }
@@ -143,18 +260,36 @@ class AppRepository(
         db.itemDao().deleteById(item.id)
         db.itemDao().insert(item.toEntity(toListId))
         api?.let { api -> bgScope.launch {
-            fromListId?.let {
-                runCatching { api.deleteItem(it, item.id) }.onFailure { e ->
-                    val err = e.toNetworkError()
-                    Analytics.trackError(e, "AppRepository.moveItem.delete: ${err::class.simpleName} code=${err.httpCode}")
-                }
-            }
-            runCatching {
-                api.createItem(toListId, CreateItemRequest(item.name,
-                    item.tags.joinToString(",") { it.name }, item.note, item.categoryId ?: ""))
-            }.onFailure { e ->
+            try {
+                fromListId?.let { api.deleteItem(it, item.id) }
+                api.createItem(toListId, CreateItemRequest(
+                    item.name,
+                    item.tags.joinToString(",") { it.name },
+                    item.note,
+                    item.categoryId ?: ""
+                ))
+            } catch (e: Exception) {
                 val err = e.toNetworkError()
-                Analytics.trackError(e, "AppRepository.moveItem.create: ${err::class.simpleName} code=${err.httpCode}")
+                if (err.isRetryable()) {
+                    savePendingAndEnqueue(PendingOpEntity(
+                        id = UUID.randomUUID().toString(),
+                        op_type = PendingOpEntity.MOVE_ITEM,
+                        payload_json = gson.toJson(PendingOpPayload(
+                            itemId = item.id,
+                            fromListId = fromListId,
+                            toListId = toListId,
+                            itemName = item.name,
+                            itemTags = item.tags.joinToString(",") { it.name },
+                            itemNote = item.note,
+                            itemCategoryId = item.categoryId,
+                            itemImagePath = item.imagePath
+                        )),
+                        list_id = toListId,
+                        created_at = System.currentTimeMillis()
+                    ))
+                } else {
+                    Analytics.trackError(e, "AppRepository.moveItem: ${err::class.simpleName} code=${err.httpCode}")
+                }
             }
         }}
     }
