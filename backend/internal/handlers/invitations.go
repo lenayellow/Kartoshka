@@ -19,11 +19,12 @@ import (
 type InvitationHandler struct {
 	invitations *repository.InvitationRepo
 	lists       *repository.ListRepo
+	users       *repository.UserRepo
 	logger      *slog.Logger
 }
 
-func NewInvitationHandler(invitations *repository.InvitationRepo, lists *repository.ListRepo, logger *slog.Logger) *InvitationHandler {
-	return &InvitationHandler{invitations: invitations, lists: lists, logger: logger}
+func NewInvitationHandler(invitations *repository.InvitationRepo, lists *repository.ListRepo, users *repository.UserRepo, logger *slog.Logger) *InvitationHandler {
+	return &InvitationHandler{invitations: invitations, lists: lists, users: users, logger: logger}
 }
 
 // POST /lists/{list_id}/invite — создать инвайт, вернуть deep-link
@@ -41,6 +42,40 @@ func (h *InvitationHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	// email необязателен — игнорируем ошибку парсинга
 	_ = json.NewDecoder(r.Body).Decode(&req)
+
+	if req.InviteeEmail != "" {
+		invitee, err := h.users.GetByEmail(r.Context(), req.InviteeEmail)
+		if err != nil {
+			apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
+			return
+		}
+		if invitee == nil {
+			apierror.Write(w, r, http.StatusNotFound, apierror.CodeInviteUserNotFound, "User not found", "")
+			return
+		}
+		if invitee.UserID == userID {
+			apierror.Write(w, r, http.StatusConflict, apierror.CodeInviteSelfForbidden, "Cannot invite yourself", "")
+			return
+		}
+		existingRole, err := h.lists.GetMemberRole(r.Context(), listID, invitee.UserID)
+		if err != nil {
+			apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
+			return
+		}
+		if existingRole != "" {
+			apierror.Write(w, r, http.StatusConflict, apierror.CodeInviteAlreadyMember, "User is already a member", "")
+			return
+		}
+		pending, err := h.invitations.GetPendingByListAndEmail(r.Context(), listID, req.InviteeEmail)
+		if err != nil {
+			apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeInternal, "Internal error", err.Error())
+			return
+		}
+		if pending != nil {
+			apierror.Write(w, r, http.StatusConflict, apierror.CodeInviteAlreadySent, "Invitation already pending", "")
+			return
+		}
+	}
 
 	inv, err := h.invitations.Create(r.Context(), listID, userID, req.InviteeEmail)
 	if err != nil {

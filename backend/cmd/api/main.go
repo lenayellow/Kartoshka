@@ -59,7 +59,7 @@ func main() {
 	notifier := notifications.NewNotifier(pushTokens, logger)
 
 	authHandler := handlers.NewAuthHandler(users, tokens, logger)
-	inviteHandler := handlers.NewInvitationHandler(invitations, lists, logger)
+	inviteHandler := handlers.NewInvitationHandler(invitations, lists, users, logger)
 	syncHandler := handlers.NewSyncHandler(events, lists, logger)
 	userHandler := handlers.NewUserHandler(users, pushTokens, store, logger)
 	listHandler := handlers.NewListHandler(lists, logger)

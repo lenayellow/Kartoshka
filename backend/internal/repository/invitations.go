@@ -179,6 +179,49 @@ func (r *InvitationRepo) Accept(ctx context.Context, token, listID, userID strin
 	})
 }
 
+// GetPendingByListAndEmail возвращает активный pending-инвайт для данного
+// email на данный список, или nil если такого нет.
+func (r *InvitationRepo) GetPendingByListAndEmail(ctx context.Context, listID, email string) (*models.Invitation, error) {
+	var inv *models.Invitation
+	err := r.db.Driver.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
+		_, res, err := s.Execute(ctx, table.OnlineReadOnlyTxControl(),
+			`DECLARE $list_id AS Utf8;
+			 DECLARE $invitee_email AS Utf8;
+			 SELECT invite_token, list_id, inviter_id, invitee_email,
+			        status, created_at, expires_at
+			 FROM invitations
+			 WHERE list_id = $list_id
+			   AND invitee_email = $invitee_email
+			   AND status = "pending"`,
+			table.NewQueryParameters(
+				table.ValueParam("$list_id", types.TextValue(listID)),
+				table.ValueParam("$invitee_email", types.TextValue(email)),
+			),
+		)
+		if err != nil {
+			return err
+		}
+		defer res.Close()
+		if res.NextResultSet(ctx) && res.NextRow() {
+			i := models.Invitation{}
+			if err = res.ScanNamed(
+				named.Required("invite_token", &i.InviteToken),
+				named.Required("list_id", &i.ListID),
+				named.Required("inviter_id", &i.InviterID),
+				named.Optional("invitee_email", &i.InviteeEmail),
+				named.Required("status", &i.Status),
+				named.Required("created_at", &i.CreatedAt),
+				named.Required("expires_at", &i.ExpiresAt),
+			); err != nil {
+				return err
+			}
+			inv = &i
+		}
+		return res.Err()
+	})
+	return inv, err
+}
+
 // MarkExpired помечает инвайт как истёкший.
 func (r *InvitationRepo) MarkExpired(ctx context.Context, token string) error {
 	return r.db.Driver.Table().Do(ctx, func(ctx context.Context, s table.Session) error {
