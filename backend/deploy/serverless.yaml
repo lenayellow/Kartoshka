@@ -1,0 +1,25 @@
+function:
+  name: kartoshka-api
+  runtime: golang121
+  entrypoint: ycfunc.Handler
+  memory: 256MB
+  timeout: 30s
+  environment:
+    YDB_ENDPOINT: ${YDB_ENDPOINT}
+    YDB_DATABASE: ${YDB_DATABASE}
+    YDB_SA_KEY_FILE: /function/code/sa_key.json
+    YANDEX_CLIENT_ID: ${YANDEX_CLIENT_ID}
+    YANDEX_CLIENT_SECRET: ${YANDEX_CLIENT_SECRET}
+    YANDEX_REDIRECT_URI: kartoshka://auth/yandex/callback
+    JWT_SECRET: ${JWT_SECRET}
+    JWT_ACCESS_TTL: 15m
+    JWT_REFRESH_TTL: 720h
+    S3_ENDPOINT: https://storage.yandexcloud.net
+    S3_BUCKET: super-spiski-media
+    S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+    S3_SECRET_KEY: ${S3_SECRET_KEY}
+    SMTP_HOST: smtp.yandex.ru
+    SMTP_PORT: "465"
+    SMTP_USER: ${SMTP_USER}
+    SMTP_PASS: ${SMTP_PASS}
+    ENV: production

@@ -1,0 +1,17 @@
+openapi: 3.0.0
+info:
+  title: kartoshka-api
+  version: 1.0.0
+paths:
+  /{path+}:
+    x-yc-apigateway-any-method:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: d4ekunjp9jaf8c9l6pqt
+        service_account_id: ajed34lo1545dsks62n9
+      parameters:
+        - name: path
+          in: path
+          required: false
+          schema:
+            type: string

@@ -67,6 +67,15 @@ backend/api.exe
 backend/api.exe~
 backend/response.json
 
+# Cloud Functions deploy artifacts (zip archives and compiled binaries)
+backend/deploy/ycfunc/*.zip
+backend/deploy/ycfunc/main
+backend/deploy/ycfunc/ycfunc
+backend/deploy/ycfunc/sa_key.json
+
+# serverless.yaml with real secrets — use serverless.yaml (placeholders) in repo
+backend/deploy/serverless.yaml.local
+
 # Secrets — NEVER commit
 backend/.env
 backend/sa_key.json
