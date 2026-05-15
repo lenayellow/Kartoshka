@@ -95,16 +95,17 @@ func (r *ItemRepo) Create(ctx context.Context, listID, userID, name, tags, note,
 			 DECLARE $tags AS Utf8;
 			 DECLARE $note AS Utf8;
 			 DECLARE $category_id AS Utf8;
+			 DECLARE $photo_url AS Utf8;
 			 DECLARE $added_by AS Utf8;
 			 DECLARE $updated_by AS Utf8;
 			 DECLARE $updated_at AS Datetime;
 			 DECLARE $sort_index AS Int32;
 			 UPSERT INTO items
 			   (item_id, list_id, name, tags, note, category_id,
-			    is_deleted, added_by, updated_by, updated_at, sort_index)
+			    photo_url, is_deleted, added_by, updated_by, updated_at, sort_index)
 			 VALUES
 			   ($item_id, $list_id, $name, $tags, $note, $category_id,
-			    false, $added_by, $updated_by, $updated_at, $sort_index)`,
+			    $photo_url, false, $added_by, $updated_by, $updated_at, $sort_index)`,
 			table.NewQueryParameters(
 				table.ValueParam("$item_id", types.TextValue(itemID)),
 				table.ValueParam("$list_id", types.TextValue(listID)),
@@ -112,6 +113,7 @@ func (r *ItemRepo) Create(ctx context.Context, listID, userID, name, tags, note,
 				table.ValueParam("$tags", types.TextValue(tags)),
 				table.ValueParam("$note", types.TextValue(note)),
 				table.ValueParam("$category_id", types.TextValue(categoryID)),
+				table.ValueParam("$photo_url", types.TextValue("")),
 				table.ValueParam("$added_by", types.TextValue(userID)),
 				table.ValueParam("$updated_by", types.TextValue(userID)),
 				table.ValueParam("$updated_at", types.DatetimeValueFromTime(now)),

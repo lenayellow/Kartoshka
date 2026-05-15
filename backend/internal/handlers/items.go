@@ -78,6 +78,7 @@ func (h *ItemHandler) Create(w http.ResponseWriter, r *http.Request) {
 	item, err := h.items.Create(r.Context(), listID, userID,
 		req.Name, req.Tags, req.Note, req.CategoryID, req.SortIndex)
 	if err != nil {
+		h.logger.Error("item create failed", "err", err, "list_id", listID)
 		apierror.Write(w, r, http.StatusInternalServerError, apierror.CodeItemCreateFailed, "Failed to create item", err.Error())
 		return
 	}
