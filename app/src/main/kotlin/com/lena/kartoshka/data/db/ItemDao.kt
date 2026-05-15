@@ -30,4 +30,7 @@ interface ItemDao {
 
     @Query("DELETE FROM items WHERE list_id = :listId")
     suspend fun deleteAllForList(listId: String)
+
+    @Query("DELETE FROM items WHERE list_id IN (:listIds)")
+    suspend fun deleteAllForLists(listIds: List<String>)
 }

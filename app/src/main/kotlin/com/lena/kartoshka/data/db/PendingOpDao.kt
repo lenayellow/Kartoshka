@@ -21,4 +21,7 @@ interface PendingOpDao {
 
     @Query("DELETE FROM pending_ops WHERE retry_count >= :max")
     suspend fun deleteExhausted(max: Int)
+
+    @Query("DELETE FROM pending_ops WHERE list_id IN (:listIds)")
+    suspend fun deleteByListIds(listIds: List<String>)
 }

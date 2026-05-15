@@ -345,11 +345,25 @@ class AppRepository(
             Analytics.trackError(e, "AppRepository.createInvite: ${err::class.simpleName} code=${err.httpCode}")
         }.getOrNull()
 
+    suspend fun sendInviteByEmail(listId: String, email: String): Result<InviteResult> =
+        runCatching {
+            val resp = api?.createInvite(listId, CreateInviteRequest(email))
+                ?: throw java.io.IOException("not logged in")
+            InviteResult(resp.web_link, resp.deep_link, resp.email_sent)
+        }
+
     // --- Current user ---
 
     suspend fun getCurrentUser() = runCatching { api?.getMe() }.getOrNull()
 
     // --- Seed sample data on first launch ---
+
+    suspend fun deleteSeedLists() {
+        val ids = listOf("1", "2", "3", "4", "5")
+        db.pendingOpDao().deleteByListIds(ids)
+        db.itemDao().deleteAllForLists(ids)
+        db.shoppingListDao().deleteByIds(ids)
+    }
 
     suspend fun seedIfEmpty() {
         if (db.shoppingListDao().count() > 0) return

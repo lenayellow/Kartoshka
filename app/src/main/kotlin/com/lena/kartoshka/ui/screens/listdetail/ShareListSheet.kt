@@ -60,6 +60,9 @@ import androidx.compose.ui.unit.sp
 import com.lena.kartoshka.R
 import com.lena.kartoshka.data.AppRepository
 import com.lena.kartoshka.data.ListMember
+import com.lena.kartoshka.network.Feature
+import com.lena.kartoshka.network.toNetworkError
+import com.lena.kartoshka.network.toUserMessage
 import com.lena.kartoshka.ui.components.MemberAvatar
 import kotlinx.coroutines.launch
 
@@ -80,6 +83,7 @@ fun ShareListSheet(
     var isSending by remember { mutableStateOf(false) }
     var isCopying by remember { mutableStateOf(false) }
     var feedback by remember { mutableStateOf("") }
+    var isFeedbackError by remember { mutableStateOf(false) }
     var deepLink by remember { mutableStateOf("") }
     val context = LocalContext.current
 
@@ -95,21 +99,24 @@ fun ShareListSheet(
         scope.launch {
             isSending = true
             focusManager.clearFocus()
-            val result = appRepository.createInvite(listId, email.trim())
-            when {
-                result == null -> feedback = "error"
-                result.emailSent -> {
+            appRepository.sendInviteByEmail(listId, email.trim()).fold(
+                onSuccess = { result ->
+                    isFeedbackError = false
                     email = ""
-                    feedback = "sent"
+                    feedback = if (result.emailSent) {
+                        context.getString(R.string.share_invite_sent)
+                    } else {
+                        // Сервер создал инвайт, но письмо не ушло — кладём ссылку в буфер,
+                        // чтобы пользователь мог отправить вручную.
+                        clipboardManager.setText(AnnotatedString(result.webLink))
+                        context.getString(R.string.share_email_failed_link_copied)
+                    }
+                },
+                onFailure = { e ->
+                    isFeedbackError = true
+                    feedback = e.toNetworkError().toUserMessage(context, Feature.Share)
                 }
-                else -> {
-                    // Сервер создал инвайт, но письмо не ушло — кладём ссылку в буфер,
-                    // чтобы пользователь мог отправить вручную.
-                    clipboardManager.setText(AnnotatedString(result.webLink))
-                    email = ""
-                    feedback = "email_failed"
-                }
-            }
+            )
             isSending = false
         }
     }
@@ -171,7 +178,7 @@ fun ShareListSheet(
             // Email invite field
             OutlinedTextField(
                 value = email,
-                onValueChange = { email = it; feedback = "" },
+                onValueChange = { email = it; feedback = ""; isFeedbackError = false },
                 label = { Text(stringResource(R.string.share_email_hint)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -200,14 +207,8 @@ fun ShareListSheet(
 
             AnimatedVisibility(visible = feedback.isNotEmpty()) {
                 Text(
-                    text = when (feedback) {
-                        "sent" -> stringResource(R.string.share_invite_sent)
-                        "copied" -> stringResource(R.string.share_link_copied)
-                        "error" -> stringResource(R.string.share_error)
-                        "email_failed" -> stringResource(R.string.share_email_failed_link_copied)
-                        else -> ""
-                    },
-                    color = if (feedback == "error") MaterialTheme.colorScheme.error
+                    text = feedback,
+                    color = if (isFeedbackError) MaterialTheme.colorScheme.error
                             else MaterialTheme.colorScheme.primary,
                     fontSize = 14.sp,
                     modifier = Modifier.fillMaxWidth(),
@@ -277,9 +278,11 @@ fun ShareListSheet(
                         val link = result?.webLink
                         if (!link.isNullOrEmpty()) {
                             clipboardManager.setText(AnnotatedString(link))
-                            feedback = "copied"
+                            isFeedbackError = false
+                            feedback = context.getString(R.string.share_link_copied)
                         } else {
-                            feedback = "error"
+                            isFeedbackError = true
+                            feedback = context.getString(R.string.share_error)
                         }
                         isCopying = false
                     }

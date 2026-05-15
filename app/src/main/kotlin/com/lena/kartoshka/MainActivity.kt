@@ -94,6 +94,7 @@ class MainActivity : ComponentActivity() {
                     // Seed only when not logged in; sync from server when logged in
                     LaunchedEffect(Unit) {
                         if (tokenStore.isLoggedIn) {
+                            appRepository.deleteSeedLists()
                             syncRepository.syncLists()
                             appRepository.getCurrentUser()?.let {
                                 userPrefsRepository.saveUserInfo(it.name, it.email)
