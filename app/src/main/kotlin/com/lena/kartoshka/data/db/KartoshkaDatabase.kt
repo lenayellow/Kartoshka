@@ -10,7 +10,8 @@ import com.lena.kartoshka.data.LoyaltyCard
 
 @Database(
     entities = [ShoppingListEntity::class, ItemEntity::class, PurchaseHistoryEntity::class, LoyaltyCard::class, PendingOpEntity::class],
-    version = 4
+    version = 4,
+    exportSchema = true
 )
 abstract class KartoshkaDatabase : RoomDatabase() {
 
