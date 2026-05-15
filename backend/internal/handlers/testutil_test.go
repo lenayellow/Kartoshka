@@ -6,8 +6,10 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/lena/kartoshka-backend/internal/middleware"
 	"github.com/lena/kartoshka-backend/internal/models"
@@ -291,6 +293,87 @@ func (f *fakeTokenStore) Get(_ context.Context, token string) (string, time.Time
 func (f *fakeTokenStore) Delete(_ context.Context, token string) error {
 	delete(f.tokens, token)
 	return nil
+}
+
+// ── fakeInvitationStore ──────────────────────────────────────────────────────
+
+type fakeInvitationStore struct {
+	pending *models.Invitation
+	byToken *models.Invitation
+	info    *models.InviteInfo
+	err     error
+}
+
+func (f *fakeInvitationStore) Create(_ context.Context, listID, inviterID, inviteeEmail string) (*models.Invitation, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return &models.Invitation{
+		InviteToken:  uuid.New().String(),
+		ListID:       listID,
+		InviterID:    inviterID,
+		InviteeEmail: inviteeEmail,
+		Status:       "pending",
+		ExpiresAt:    time.Now().Add(7 * 24 * time.Hour),
+	}, nil
+}
+
+func (f *fakeInvitationStore) GetByToken(_ context.Context, _ string) (*models.Invitation, error) {
+	return f.byToken, f.err
+}
+
+func (f *fakeInvitationStore) GetInfoByToken(_ context.Context, _ string) (*models.InviteInfo, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	if f.byToken != nil {
+		return &models.InviteInfo{
+			InviteToken: f.byToken.InviteToken,
+			Status:      f.byToken.Status,
+			ExpiresAt:   f.byToken.ExpiresAt,
+		}, nil
+	}
+	return f.info, nil
+}
+
+func (f *fakeInvitationStore) GetPendingByListAndEmail(_ context.Context, _, _ string) (*models.Invitation, error) {
+	return f.pending, f.err
+}
+
+func (f *fakeInvitationStore) Accept(_ context.Context, _, _, _ string) error { return f.err }
+func (f *fakeInvitationStore) MarkExpired(_ context.Context, _ string) error  { return f.err }
+
+// ── router helpers ───────────────────────────────────────────────────────────
+
+func makeFakeListStoreWithRoles(roles map[string]string) *fakeListStore {
+	fs := newFakeListStore()
+	for key, role := range roles {
+		parts := strings.SplitN(key, ":", 2)
+		if len(parts) == 2 {
+			fs.addMember(parts[0], parts[1], role)
+		}
+	}
+	return fs
+}
+
+func makeListRouter(h *ListHandler) *chi.Mux {
+	r := chi.NewRouter()
+	r.Get("/lists", h.GetAll)
+	r.Post("/lists", h.Create)
+	r.Get("/lists/{list_id}", h.GetOne)
+	r.Put("/lists/{list_id}", h.Update)
+	r.Delete("/lists/{list_id}", h.Delete)
+	r.Get("/lists/{list_id}/members", h.GetMembers)
+	r.Delete("/lists/{list_id}/members/{user_id}", h.RemoveMember)
+	return r
+}
+
+func makeInvitationRouter(h *InvitationHandler) *chi.Mux {
+	r := chi.NewRouter()
+	r.Post("/lists/{list_id}/invite", h.Create)
+	r.Get("/invite/{invite_token}", h.GetInfo)
+	r.Post("/invite/{invite_token}/accept", h.Accept)
+	return r
 }
 
 // ── shared test helpers ──────────────────────────────────────────────────────
