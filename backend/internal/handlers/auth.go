@@ -17,8 +17,8 @@ import (
 )
 
 type AuthHandler struct {
-	users  *repository.UserRepo
-	tokens *repository.TokenRepo
+	users  userStore
+	tokens tokenStore
 	logger *slog.Logger
 }
 

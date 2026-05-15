@@ -17,9 +17,9 @@ import (
 )
 
 type InvitationHandler struct {
-	invitations *repository.InvitationRepo
-	lists       *repository.ListRepo
-	users       *repository.UserRepo
+	invitations invitationStore
+	lists       listStore
+	users       userStore
 	logger      *slog.Logger
 }
 

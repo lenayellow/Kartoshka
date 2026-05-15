@@ -21,15 +21,19 @@ import (
 )
 
 type ItemHandler struct {
-	items    *repository.ItemRepo
-	lists    *repository.ListRepo
-	store    *storage.S3Client       // nil если S3 не настроен
+	items    itemStore
+	lists    listStore
+	store    mediaStorage            // nil если S3 не настроен
 	notifier *notifications.Notifier // nil если push не настроен
 	logger   *slog.Logger
 }
 
 func NewItemHandler(items *repository.ItemRepo, lists *repository.ListRepo, store *storage.S3Client, notifier *notifications.Notifier, logger *slog.Logger) *ItemHandler {
-	return &ItemHandler{items: items, lists: lists, store: store, notifier: notifier, logger: logger}
+	var s mediaStorage
+	if store != nil {
+		s = store
+	}
+	return &ItemHandler{items: items, lists: lists, store: s, notifier: notifier, logger: logger}
 }
 
 // GET /lists/{list_id}/items

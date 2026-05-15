@@ -15,8 +15,8 @@ import (
 )
 
 type SyncHandler struct {
-	events *repository.EventsRepo
-	lists  *repository.ListRepo
+	events eventsStore
+	lists  listStore
 	logger *slog.Logger
 }
 

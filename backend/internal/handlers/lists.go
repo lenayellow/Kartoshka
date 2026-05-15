@@ -15,7 +15,7 @@ import (
 )
 
 type ListHandler struct {
-	lists  *repository.ListRepo
+	lists  listStore
 	logger *slog.Logger
 }
 

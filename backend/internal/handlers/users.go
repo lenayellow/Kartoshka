@@ -16,14 +16,18 @@ import (
 )
 
 type UserHandler struct {
-	users  *repository.UserRepo
-	tokens *repository.PushTokenRepo
-	store  *storage.S3Client // nil если S3 не настроен
+	users  userStore
+	tokens pushTokenStore
+	store  mediaStorage // nil если S3 не настроен
 	logger *slog.Logger
 }
 
 func NewUserHandler(users *repository.UserRepo, tokens *repository.PushTokenRepo, store *storage.S3Client, logger *slog.Logger) *UserHandler {
-	return &UserHandler{users: users, tokens: tokens, store: store, logger: logger}
+	var s mediaStorage
+	if store != nil {
+		s = store
+	}
+	return &UserHandler{users: users, tokens: tokens, store: s, logger: logger}
 }
 
 // GET /users/me

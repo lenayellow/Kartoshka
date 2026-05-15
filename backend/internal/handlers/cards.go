@@ -14,7 +14,7 @@ import (
 )
 
 type CardHandler struct {
-	cards  *repository.CardRepo
+	cards  cardStore
 	logger *slog.Logger
 }
 
