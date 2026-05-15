@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -180,6 +181,117 @@ func (f *fakeListStore) GetMembers(_ context.Context, listID string) ([]models.L
 }
 
 func (f *fakeListStore) RemoveMember(_ context.Context, _, _ string) error { return f.err }
+
+// ── fakeUserStore ────────────────────────────────────────────────────────────
+
+type fakeUserStore struct {
+	users       map[string]*models.User
+	byEmail     map[string]*models.User
+	byYandexUID map[string]*models.User
+	err         error
+}
+
+func newFakeUserStore() *fakeUserStore {
+	return &fakeUserStore{
+		users:       make(map[string]*models.User),
+		byEmail:     make(map[string]*models.User),
+		byYandexUID: make(map[string]*models.User),
+	}
+}
+
+func (f *fakeUserStore) GetByEmail(_ context.Context, email string) (*models.User, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.byEmail[email], nil
+}
+
+func (f *fakeUserStore) GetByYandexUID(_ context.Context, uid string) (*models.User, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.byYandexUID[uid], nil
+}
+
+func (f *fakeUserStore) GetByID(_ context.Context, userID string) (*models.User, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return f.users[userID], nil
+}
+
+func (f *fakeUserStore) Create(_ context.Context, yandexUID, email, name string) (*models.User, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	u := &models.User{
+		UserID:    uuid.New().String(),
+		YandexUID: yandexUID,
+		Email:     email,
+		Name:      name,
+	}
+	f.users[u.UserID] = u
+	f.byEmail[email] = u
+	if yandexUID != "" {
+		f.byYandexUID[yandexUID] = u
+	}
+	return u, nil
+}
+
+func (f *fakeUserStore) SetPasswordHash(_ context.Context, userID, hash string) error {
+	if f.err != nil {
+		return f.err
+	}
+	if u, ok := f.users[userID]; ok {
+		u.PasswordHash = hash
+	}
+	return nil
+}
+
+func (f *fakeUserStore) SetVerified(_ context.Context, _ string) error    { return f.err }
+func (f *fakeUserStore) UpdateName(_ context.Context, _, _ string) error  { return f.err }
+func (f *fakeUserStore) UpdateAvatarURL(_ context.Context, _, _ string) error { return f.err }
+
+// ── fakeTokenStore ───────────────────────────────────────────────────────────
+
+type tokenEntry struct {
+	userID    string
+	expiresAt time.Time
+}
+
+type fakeTokenStore struct {
+	tokens map[string]tokenEntry
+	err    error
+}
+
+func newFakeTokenStore() *fakeTokenStore {
+	return &fakeTokenStore{tokens: make(map[string]tokenEntry)}
+}
+
+func (f *fakeTokenStore) Save(_ context.Context, userID string, expiresAt time.Time) (string, error) {
+	if f.err != nil {
+		return "", f.err
+	}
+	token := uuid.New().String()
+	f.tokens[token] = tokenEntry{userID: userID, expiresAt: expiresAt}
+	return token, nil
+}
+
+func (f *fakeTokenStore) Get(_ context.Context, token string) (string, time.Time, error) {
+	if f.err != nil {
+		return "", time.Time{}, f.err
+	}
+	e, ok := f.tokens[token]
+	if !ok {
+		return "", time.Time{}, errors.New("not found")
+	}
+	return e.userID, e.expiresAt, nil
+}
+
+func (f *fakeTokenStore) Delete(_ context.Context, token string) error {
+	delete(f.tokens, token)
+	return nil
+}
 
 // ── shared test helpers ──────────────────────────────────────────────────────
 
