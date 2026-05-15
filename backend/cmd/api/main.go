@@ -66,6 +66,9 @@ func main() {
 	itemHandler := handlers.NewItemHandler(items, lists, store, notifier, logger)
 	cardHandler := handlers.NewCardHandler(cards, logger)
 
+	authRateLimit := middleware.RateLimitByIP(10, time.Minute)
+	inviteRateLimit := middleware.RateLimitByUserID(30, time.Hour)
+
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logging(logger))
@@ -73,13 +76,13 @@ func main() {
 	r.Use(middleware.RequestTimeout(25 * time.Second))
 
 	// Auth
-	r.Post("/auth/yandex", authHandler.YandexLogin)
-	r.Post("/auth/refresh", authHandler.Refresh)
+	r.With(authRateLimit).Post("/auth/yandex", authHandler.YandexLogin)
+	r.With(authRateLimit).Post("/auth/refresh", authHandler.Refresh)
 	r.Post("/auth/logout", authHandler.Logout)
-	r.Post("/auth/email/register", authHandler.EmailRegister)
-	r.Post("/auth/email/login", authHandler.EmailLogin)
+	r.With(authRateLimit).Post("/auth/email/register", authHandler.EmailRegister)
+	r.With(authRateLimit).Post("/auth/email/login", authHandler.EmailLogin)
 	r.Get("/auth/email/confirm", authHandler.ConfirmEmail)
-	r.Post("/auth/email/forgot", authHandler.ForgotPassword)
+	r.With(authRateLimit).Post("/auth/email/forgot", authHandler.ForgotPassword)
 	r.Get("/auth/email/reset", authHandler.ResetPasswordForm)
 	r.Post("/auth/email/reset", authHandler.ResetPassword)
 
@@ -121,7 +124,7 @@ func main() {
 		r.Get("/lists/{list_id}/events", syncHandler.GetEvents)
 
 		// Invitations
-		r.Post("/lists/{list_id}/invite", inviteHandler.Create)
+		r.With(inviteRateLimit).Post("/lists/{list_id}/invite", inviteHandler.Create)
 		r.Post("/invite/{invite_token}/accept", inviteHandler.Accept)
 
 		// Loyalty Cards

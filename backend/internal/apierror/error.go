@@ -44,6 +44,8 @@ const (
 	CodeItemNotFound    = "item_not_found"
 	CodeItemCreateFailed = "item_create_failed"
 
+	CodeTooManyRequests = "too_many_requests"
+
 	// Invitations
 	CodeInviteSelfForbidden = "invite_self_forbidden"
 	CodeInviteAlreadySent   = "invite_already_sent"
