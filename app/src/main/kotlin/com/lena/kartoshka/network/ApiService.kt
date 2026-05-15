@@ -50,6 +50,9 @@ interface ApiService {
     @POST("lists/{list_id}/invite")
     suspend fun createInvite(@Path("list_id") listId: String, @Body body: CreateInviteRequest): CreateInviteResponse
 
+    @POST("invite/{invite_token}/accept")
+    suspend fun acceptInvite(@Path("invite_token") token: String): AcceptInviteResponse
+
     @GET("lists/{list_id}/items")
     suspend fun getItems(@Path("list_id") listId: String): List<ApiItem>
 

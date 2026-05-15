@@ -43,4 +43,11 @@ class UserPrefsRepository(context: Context) {
         _userName.value = null
         _userEmail.value = null
     }
+
+    fun setPendingInviteToken(token: String?) {
+        prefs.edit().putString("pending_invite_token", token).apply()
+    }
+
+    fun getPendingInviteToken(): String? =
+        prefs.getString("pending_invite_token", null)
 }

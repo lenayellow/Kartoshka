@@ -1,7 +1,13 @@
 package com.lena.kartoshka.ui.screens.listdetail
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,10 +15,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,6 +43,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -65,6 +80,15 @@ fun ShareListSheet(
     var isSending by remember { mutableStateOf(false) }
     var isCopying by remember { mutableStateOf(false) }
     var feedback by remember { mutableStateOf("") }
+    var deepLink by remember { mutableStateOf("") }
+    val context = LocalContext.current
+
+    LaunchedEffect(listId) {
+        runCatching {
+            val result = appRepository.createInvite(listId)
+            deepLink = result?.deepLink ?: ""
+        }
+    }
 
     fun sendInvite() {
         if (email.isBlank()) return
@@ -193,6 +217,56 @@ fun ShareListSheet(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
 
+            // Quick share buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                ShareButton(
+                    icon = Icons.Filled.Phone,
+                    label = stringResource(R.string.share_telegram),
+                    backgroundColor = Color(0xFF2CA5E0),
+                    enabled = deepLink.isNotEmpty(),
+                    onClick = {
+                        val text = context.getString(R.string.share_invite_message, deepLink)
+                        val intent = Intent(Intent.ACTION_VIEW,
+                            Uri.parse("tg://msg_url?url=${Uri.encode(deepLink)}&text=${Uri.encode(text)}"))
+                        try { context.startActivity(intent) }
+                        catch (_: ActivityNotFoundException) {
+                            context.startActivity(Intent.createChooser(
+                                Intent(Intent.ACTION_SEND).setType("text/plain")
+                                    .putExtra(Intent.EXTRA_TEXT, text), null))
+                        }
+                    }
+                )
+                ShareButton(
+                    icon = Icons.AutoMirrored.Filled.Send,
+                    label = stringResource(R.string.share_sms),
+                    backgroundColor = Color(0xFF2196F3),
+                    enabled = deepLink.isNotEmpty(),
+                    onClick = {
+                        val text = context.getString(R.string.share_invite_message, deepLink)
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse("smsto:"))
+                                .putExtra("sms_body", text))
+                    }
+                )
+                ShareButton(
+                    icon = Icons.AutoMirrored.Filled.Chat,
+                    label = stringResource(R.string.share_other),
+                    backgroundColor = Color(0xFF404050),
+                    enabled = deepLink.isNotEmpty(),
+                    onClick = {
+                        val text = context.getString(R.string.share_invite_message, deepLink)
+                        context.startActivity(Intent.createChooser(
+                            Intent(Intent.ACTION_SEND).setType("text/plain")
+                                .putExtra(Intent.EXTRA_TEXT, text), null))
+                    }
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+
             // Copy link
             TextButton(
                 onClick = {
@@ -225,5 +299,40 @@ fun ShareListSheet(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ShareButton(
+    icon: ImageVector,
+    label: String,
+    backgroundColor: Color,
+    enabled: Boolean = true,
+    onClick: () -> Unit = {}
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(CircleShape)
+                .background(backgroundColor.copy(alpha = if (enabled) 1f else 0.4f))
+                .clickable(enabled = enabled, onClick = onClick),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = label,
+                tint = Color.White,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+        androidx.compose.material3.Text(
+            text = label,
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }

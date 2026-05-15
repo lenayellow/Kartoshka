@@ -63,8 +63,13 @@ class MainActivity : ComponentActivity() {
 
     private fun handleDeepLink(intent: Intent?) {
         val uri = intent?.data ?: return
-        if (uri.scheme == "kartoshka" && uri.host == "auth") {
-            uri.getQueryParameter("code")?.let { YandexAuthBus.code.value = it }
+        when {
+            uri.scheme == "kartoshka" && uri.host == "auth" ->
+                uri.getQueryParameter("code")?.let { YandexAuthBus.code.value = it }
+            uri.scheme == "kartoshka" && uri.host == "invite" -> {
+                val token = uri.pathSegments.firstOrNull() ?: return
+                userPrefsRepository.setPendingInviteToken(token)
+            }
         }
     }
 
@@ -92,6 +97,15 @@ class MainActivity : ComponentActivity() {
                             syncRepository.syncLists()
                             appRepository.getCurrentUser()?.let {
                                 userPrefsRepository.saveUserInfo(it.name, it.email)
+                            }
+                            userPrefsRepository.getPendingInviteToken()?.let { token ->
+                                userPrefsRepository.setPendingInviteToken(null)
+                                runCatching { ApiClient.api.acceptInvite(token) }
+                                    .onSuccess { resp ->
+                                        navController.navigate("list/${resp.list_id}") {
+                                            popUpTo("lists") { inclusive = false }
+                                        }
+                                    }
                             }
                         } else {
                             appRepository.seedIfEmpty()
@@ -151,9 +165,22 @@ class MainActivity : ComponentActivity() {
                                 if (name.isNotEmpty() || email.isNotEmpty()) {
                                     userPrefsRepository.saveUserInfo(name, email)
                                 }
-                                scope.launch { syncRepository.syncLists() }
-                                navController.navigate("lists") {
-                                    popUpTo("auth") { inclusive = true }
+                                scope.launch {
+                                    syncRepository.syncLists()
+                                    val pendingToken = userPrefsRepository.getPendingInviteToken()
+                                    if (pendingToken != null) {
+                                        userPrefsRepository.setPendingInviteToken(null)
+                                        runCatching { ApiClient.api.acceptInvite(pendingToken) }
+                                            .onSuccess { resp ->
+                                                navController.navigate("list/${resp.list_id}") {
+                                                    popUpTo("auth") { inclusive = true }
+                                                }
+                                                return@launch
+                                            }
+                                    }
+                                    navController.navigate("lists") {
+                                        popUpTo("auth") { inclusive = true }
+                                    }
                                 }
                             })
                         }

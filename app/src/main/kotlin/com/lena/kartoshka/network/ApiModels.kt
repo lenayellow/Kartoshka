@@ -103,6 +103,11 @@ data class CreateInviteResponse(
     val email_sent: Boolean = true
 )
 
+data class AcceptInviteResponse(
+    val message: String,
+    val list_id: String
+)
+
 data class ApiItem(
     val item_id: String,
     val list_id: String,

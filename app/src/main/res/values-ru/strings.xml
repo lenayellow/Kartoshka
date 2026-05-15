@@ -81,8 +81,10 @@
     <string name="share_list_question">Как вы хотите поделиться списком?</string>
     <string name="share_whatsapp">WhatsApp</string>
     <string name="share_sms">SMS</string>
+    <string name="share_telegram">Telegram</string>
     <string name="share_other">Другое</string>
     <string name="share_or">ИЛИ</string>
+    <string name="share_invite_message">Вас пригласили в список покупок. Откройте ссылку: %1$s</string>
     <string name="share_email_hint">Адрес эл. почты или контакт</string>
     <string name="share_send_invite">Отправить приглашение</string>
     <string name="ideas_title">Идеи</string>
