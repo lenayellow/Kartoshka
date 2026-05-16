@@ -62,18 +62,12 @@ desktop.ini
 # Screenshots folder for prompts (optional — remove this line if you want to commit them)
 # screenshots/
 
-# Backend build artifacts
-backend/api.exe
-backend/api.exe~
+# Backend build artifacts and Cloud Functions artifacts (deleted in Sprint 5.5)
 backend/response.json
-
-# Cloud Functions deploy artifacts (zip archives and compiled binaries)
-backend/deploy/ycfunc/*.zip
-backend/deploy/ycfunc/main
-backend/deploy/ycfunc/ycfunc
-backend/deploy/ycfunc/sa_key.json
-
-# serverless.yaml with real secrets — use serverless.yaml (placeholders) in repo
+backend/handler.go
+backend/ycfunc/
+backend/deploy/makezip/
+backend/deploy/ycfunc/
 backend/deploy/serverless.yaml.local
 
 # Secrets — NEVER commit

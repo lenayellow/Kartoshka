@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/ydb-platform/ydb-go-sdk/v3"
@@ -14,21 +15,32 @@ type DB struct {
 }
 
 // Connect открывает соединение с YDB Serverless.
-// Читает YDB_ENDPOINT, YDB_DATABASE, YDB_SA_KEY_FILE из переменных окружения.
+// Читает YDB_ENDPOINT, YDB_DATABASE (обязательные).
+// Auth: YDB_SA_KEY_FILE задан → ключ SA (локальная разработка);
+// пусто → metadata-сервис Yandex Cloud (Serverless Containers/VM с SA).
 func Connect(ctx context.Context) (*DB, error) {
 	endpoint := os.Getenv("YDB_ENDPOINT")
 	database := os.Getenv("YDB_DATABASE")
-	saKeyFile := os.Getenv("YDB_SA_KEY_FILE")
 
-	if endpoint == "" || database == "" || saKeyFile == "" {
-		return nil, fmt.Errorf("требуются переменные окружения: YDB_ENDPOINT, YDB_DATABASE, YDB_SA_KEY_FILE")
+	if endpoint == "" || database == "" {
+		return nil, fmt.Errorf("требуются переменные окружения: YDB_ENDPOINT, YDB_DATABASE")
 	}
 
 	dsn := endpoint + database
 
-	driver, err := ydb.Open(ctx, dsn,
-		yc.WithServiceAccountKeyFileCredentials(saKeyFile),
-	)
+	var creds ydb.Option
+	if saKeyFile := os.Getenv("YDB_SA_KEY_FILE"); saKeyFile != "" {
+		if _, err := os.Stat(saKeyFile); err != nil {
+			return nil, fmt.Errorf("YDB_SA_KEY_FILE=%s, но файл не найден: %w", saKeyFile, err)
+		}
+		slog.Info("ydb auth mode", "mode", "service_account_key_file", "path", saKeyFile)
+		creds = yc.WithServiceAccountKeyFileCredentials(saKeyFile)
+	} else {
+		slog.Info("ydb auth mode", "mode", "metadata")
+		creds = yc.WithMetadataCredentials()
+	}
+
+	driver, err := ydb.Open(ctx, dsn, creds)
 	if err != nil {
 		return nil, fmt.Errorf("ydb.Open: %w", err)
 	}

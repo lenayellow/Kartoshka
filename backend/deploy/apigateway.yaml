@@ -6,8 +6,9 @@ paths:
   /{path+}:
     x-yc-apigateway-any-method:
       x-yc-apigateway-integration:
-        type: cloud_functions
-        function_id: d4ekunjp9jaf8c9l6pqt
+        type: serverless_containers
+        # TODO: заменить на реальный container_id после создания контейнера в облаке
+        container_id: <CONTAINER_ID>
         service_account_id: ajed34lo1545dsks62n9
       parameters:
         - name: path

@@ -1,0 +1,30 @@
+# Secrets — никогда не должны попасть в образ
+.env
+sa_key.json
+
+# Windows build artifacts
+*.exe
+*.exe~
+response.json
+
+# Cloud Functions artifacts (удалим их позже, пока просто не включаем в контекст)
+handler.go
+ycfunc/
+deploy/ycfunc/
+deploy/makezip/
+deploy/serverless.yaml
+deploy/serverless.yaml.local
+
+# Инфраструктурные конфиги (не нужны внутри контейнера)
+deploy/apigateway.yaml
+docs/
+run_migration.py
+migrations/
+
+# Тестовые файлы (go build их не включает, но уменьшаем контекст)
+**/*_test.go
+
+# Git и IDE
+.git/
+.gitignore
+.idea/
