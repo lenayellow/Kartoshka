@@ -7,8 +7,7 @@ paths:
     x-yc-apigateway-any-method:
       x-yc-apigateway-integration:
         type: serverless_containers
-        # TODO: заменить на реальный container_id после создания контейнера в облаке
-        container_id: <CONTAINER_ID>
+        container_id: bba4atdl95ljfrsjs14i
         service_account_id: ajed34lo1545dsks62n9
       parameters:
         - name: path
