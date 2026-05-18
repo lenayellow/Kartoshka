@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -20,6 +21,7 @@ import (
 func main() {
 	_ = godotenv.Load()
 	logger := logging.NewLogger()
+	slog.SetDefault(logger)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
